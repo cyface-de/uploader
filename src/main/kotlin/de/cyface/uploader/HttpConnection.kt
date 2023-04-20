@@ -18,6 +18,7 @@
  */
 package de.cyface.uploader
 
+import de.cyface.model.Activation
 import de.cyface.uploader.DefaultUploader.Companion.DEFAULT_CHARSET
 import de.cyface.uploader.exception.AccountNotActivated
 import de.cyface.uploader.exception.BadRequestException
@@ -150,8 +151,47 @@ class HttpConnection : Http {
         }
     }
 
+    override fun register(connection: HttpURLConnection, email: String, password: String, captcha: String, activation: Activation): Result {
+        // For performance reasons (documentation) set either fixedLength (known length) or chunked streaming mode
+        // we currently don't use fixedLengthStreamingMode as we only use this request for small login requests
+        connection.setChunkedStreamingMode(0)
+        val payload = registrationPayload(email, password, captcha, activation);
+        val outputStream = initOutputStream(connection)
+        try {
+            outputStream.write(payload.toByteArray(DEFAULT_CHARSET))
+            outputStream.flush()
+            outputStream.close()
+        } catch (e: SSLException) {
+            // This exception is thrown by OkHttp when the network is no longer available
+            val message = e.message
+            if (message != null && message.contains("I/O error during system call, Broken pipe")) {
+                LOGGER.warn("Caught SSLException: ${e.message}")
+                throw NetworkUnavailableException(
+                    "Network became unavailable during transmission.",
+                    e
+                )
+            } else {
+                throw IllegalStateException(e) // SSLException with unknown cause
+            }
+        } catch (e: InterruptedIOException) {
+            // This exception is thrown when the request is interrupted, e.g. see MOV-761
+            throw NetworkUnavailableException("Network interrupted during login", e)
+        } catch (e: IOException) {
+            throw IllegalStateException(e)
+        }
+        return try {
+            readResponse(connection)
+        } catch (e: UploadSessionExpired) {
+            throw IllegalStateException(e)
+        }
+    }
+
     fun credentials(username: String, password: String): String {
         return "{\"username\":\"$username\",\"password\":\"$password\"}"
+    }
+
+    private fun registrationPayload(email: String, password: String, captcha: String, template: Activation): String {
+        return "{\"email\":\"$email\",\"password\":\"$password\",\"captcha\":\"$captcha\",\"template\":\"${template.name}\"}"
     }
 
     private fun gzip(input: ByteArray): ByteArray {

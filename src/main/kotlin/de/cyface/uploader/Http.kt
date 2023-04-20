@@ -18,6 +18,7 @@
  */
 package de.cyface.uploader
 
+import de.cyface.model.Activation
 import de.cyface.uploader.exception.AccountNotActivated
 import de.cyface.uploader.exception.BadRequestException
 import de.cyface.uploader.exception.ConflictException
@@ -55,8 +56,7 @@ interface Http {
     fun open(url: URL, hasBinaryContent: Boolean): HttpURLConnection
 
     /**
-     * The compressed post request which transmits a measurement batch through an existing http
-     * connection
+     * The post request which authenticates a user at the server.
      *
      * @param connection The `HttpURLConnection` to be used for the request.
      * @param username The username part of the credentials
@@ -75,7 +75,7 @@ interface Http {
      * @throws ServerUnavailableException When no connection could be established with the server
      * @throws UnexpectedResponseCode When the server returns an unexpected response code
      * @throws AccountNotActivated When the user account is not activated
-     * @return `HttpConnection.Result.LOGIN_SUCCESSFUL` if successful or else an `Exception`.
+     * @return [Result.LOGIN_SUCCESSFUL] if successful or else an `Exception`.
      */
     @Throws(
         SynchronisationException::class,
@@ -93,4 +93,45 @@ interface Http {
         AccountNotActivated::class
     )
     fun login(connection: HttpURLConnection, username: String, password: String, compress: Boolean): Result
+
+
+    /**
+     * The post request which registers a new user at the server.
+     *
+     * @param connection The `HttpURLConnection` to be used for the request.
+     * @param email The email part of the credentials
+     * @param password The password part of the credentials
+     * @param captcha The captcha token
+     * @param activation The template to use for the activation email.
+     * @throws SynchronisationException If an IOException occurred while reading the response code.
+     * @throws BadRequestException When server returns `HttpURLConnection#HTTP_BAD_REQUEST`
+     * @throws UnauthorizedException When the server returns `HttpURLConnection#HTTP_UNAUTHORIZED`
+     * @throws ForbiddenException When the server returns `HttpURLConnection#HTTP_FORBIDDEN`
+     * @throws ConflictException When the server returns `HttpURLConnection#HTTP_CONFLICT`
+     * @throws EntityNotParsableException When the server returns [DefaultUploader.HTTP_ENTITY_NOT_PROCESSABLE]
+     * @throws InternalServerErrorException When the server returns `HttpURLConnection#HTTP_INTERNAL_ERROR`
+     * @throws NetworkUnavailableException When the network used for transmission becomes unavailable.
+     * @throws TooManyRequestsException When the server returns [DefaultUploader.HTTP_TOO_MANY_REQUESTS]
+     * @throws HostUnresolvable e.g. when the phone is connected to a network which is not connected to the internet
+     * @throws ServerUnavailableException When no connection could be established with the server
+     * @throws UnexpectedResponseCode When the server returns an unexpected response code
+     * @throws AccountNotActivated When the user account is not activated
+     * @return [Result.UPLOAD_SUCCESSFUL] if successful or else an `Exception`.
+     */
+    @Throws(
+        SynchronisationException::class,
+        UnauthorizedException::class,
+        BadRequestException::class,
+        InternalServerErrorException::class,
+        ForbiddenException::class,
+        EntityNotParsableException::class,
+        ConflictException::class,
+        NetworkUnavailableException::class,
+        TooManyRequestsException::class,
+        HostUnresolvable::class,
+        ServerUnavailableException::class,
+        UnexpectedResponseCode::class,
+        AccountNotActivated::class
+    )
+    fun register(connection: HttpURLConnection, email: String, password: String, captcha: String, activation: Activation): Result
 }
