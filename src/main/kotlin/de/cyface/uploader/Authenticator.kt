@@ -19,7 +19,6 @@
 package de.cyface.uploader
 
 import de.cyface.uploader.exception.AccountNotActivated
-import de.cyface.uploader.exception.AuthenticationFailed
 import de.cyface.uploader.exception.BadRequestException
 import de.cyface.uploader.exception.ConflictException
 import de.cyface.uploader.exception.EntityNotParsableException
@@ -48,8 +47,6 @@ interface Authenticator {
      *
      * @param username The username of the user to authenticate
      * @param password The password of the user to authenticate
-     * @throws AuthenticationFailed If the authentication failed for some reason. Further details are available from the
-     *             thrown `Exception`.
      * @throws SynchronisationException If an IOException occurred while reading the response code.
      * @throws BadRequestException When server returns `HttpURLConnection#HTTP_BAD_REQUEST`
      * @throws UnauthorizedException When the server returns `HttpURLConnection#HTTP_UNAUTHORIZED`
