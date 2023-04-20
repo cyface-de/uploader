@@ -1,3 +1,5 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
 /*
  * Copyright 2020-2023 Cyface GmbH
  *
@@ -39,7 +41,7 @@ plugins {
   id 'eclipse'
   id 'idea'
   //noinspection SpellCheckingInspection
-  id 'com.github.johnrengelman.shadow' version '6.1.0'
+  id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
   id "com.github.spotbugs" version "4.7.5"
   // Plugin to display the Gradle task graph
   //noinspection SpellCheckingInspection
@@ -80,21 +82,21 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-  vertxVersion = '4.1.2'
-  slf4jVersion = '1.7.29'
-  commonsLangVersion = '3.12.0'
+  slf4jVersion = '2.0.7'
   gradleWrapperVersion = '7.6.1'
-  cyfaceSerializationVersion = '2.3.6-alpha1' // FIXME
-  googleApiClientVersion = '1.31.5' // transmission protocol
+  cyfaceSerializationVersion = '2.3.7-alpha1' // FIXME
+  googleApiClientVersion = '2.2.0' // transmission protocol
 
   // Versions of testing dependencies
-  junitVersion = '5.7.2'
-  mockitoVersion = '3.3.3'
+  junitVersion = '5.9.2'
+  mockitoVersion = '5.2.0'
   hamcrestVersion = '2.2'
-  flapdoodleVersion = '3.0.0'
+  flapdoodleVersion = '4.6.1'
 
-  jacocoVersion = '0.8.5'
-  spotBugsPluginVersion = '1.10.1'
+  jacocoVersion = '0.8.9'
+  spotBugsPluginVersion = '1.12.0'
+  spotbugsToolsVersion = '4.7.3'
+  pmdToolsVersion = '6.55.0'
 }
 
 wrapper {
@@ -118,9 +120,7 @@ dependencies {
 
   // Upload
   implementation "de.cyface:serializer:$rootProject.ext.cyfaceSerializationVersion"
-  implementation ("com.google.api-client:google-api-client:$rootProject.ext.googleApiClientVersion",{
-    //exclude group:'org.apache.httpcomponents', module:'httpclient'
-  })
+  implementation "com.google.api-client:google-api-client:$rootProject.ext.googleApiClientVersion"
 
   // Other
   implementation "org.slf4j:slf4j-api:$slf4jVersion"
@@ -164,24 +164,32 @@ jacocoTestReport {
 }
 
 spotbugs {
-  toolVersion = '4.4.1'
+  toolVersion = "$spotbugsToolsVersion"
   ignoreFailures = true
   excludeFilter = file("$rootProject.projectDir/config/spotbugs/excludeFilter.xml")
 }
 
+tasks.withType(SpotBugsTask) {
+  reports {
+    xml.enabled = false
+    html.enabled = true
+  }
+  //pluginClasspath = project.configurations.spotbugsPlugins
+}
+
 // After hours of trying to fix local `./gradlew check` execution only this helped [DAT-803]
 // (https://github.com/spotbugs/spotbugs-gradle-plugin/issues/32#issuecomment-779661275)
-gradle.taskGraph.beforeTask { task ->
+/*gradle.taskGraph.beforeTask { task ->
   if (task.name.toLowerCase().contains('spotbugs')) {
     task.reports {
       xml.enabled = false
       html.enabled = true
     }
   }
-}
+}*/
 
 pmd {
-  toolVersion = '6.22.0'
+  toolVersion = "$pmdToolsVersion"
   incrementalAnalysis = true
   ruleSetFiles = project(':').files('config/pmd.xml')
   rulesMinimumPriority = 4
