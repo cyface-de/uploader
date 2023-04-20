@@ -1,6 +1,5 @@
 = Uploader
 
-image:https://img.shields.io/badge/vert.x-4.1.2-purple.svg[link="https://vertx.io"]
 image:https://github.com/cyface-de/uploader/actions/workflows/gradle_build.yml/badge.svg[link="https://github.com/cyface-de/uploader/actions/workflows/gradle_build.yml"]
 image:https://github.com/cyface-de/uploader/actions/workflows/gradle_publish.yml/badge.svg[link="https://github.com/cyface-de/uploader/actions/workflows/gradle_publish.yml"]
 

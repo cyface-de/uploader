@@ -151,7 +151,13 @@ class HttpConnection : Http {
         }
     }
 
-    override fun register(connection: HttpURLConnection, email: String, password: String, captcha: String, activation: Activation): Result {
+    override fun register(
+        connection: HttpURLConnection,
+        email: String,
+        password: String,
+        captcha: String,
+        activation: Activation
+    ): Result {
         // For performance reasons (documentation) set either fixedLength (known length) or chunked streaming mode
         // we currently don't use fixedLengthStreamingMode as we only use this request for small login requests
         connection.setChunkedStreamingMode(0)
