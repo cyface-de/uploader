@@ -94,7 +94,6 @@ interface Http {
     )
     fun login(connection: HttpURLConnection, username: String, password: String, compress: Boolean): Result
 
-
     /**
      * The post request which registers a new user at the server.
      *
@@ -133,5 +132,11 @@ interface Http {
         UnexpectedResponseCode::class,
         AccountNotActivated::class
     )
-    fun register(connection: HttpURLConnection, email: String, password: String, captcha: String, activation: Activation): Result
+    fun register(
+        connection: HttpURLConnection,
+        email: String,
+        password: String,
+        captcha: String,
+        activation: Activation
+    ): Result
 }

@@ -19,8 +19,8 @@
 package de.cyface.uploader.exception
 
 /**
- * An `Exception` thrown each time data synchronisation with the server fails. It provides further information either via
- * a message or another wrapped `Exception`.
+ * An `Exception` thrown each time data synchronisation with the server fails. It provides further information either
+ * via a message or another wrapped `Exception`.
  *
  * @author Klemens Muthmann
  * @version 1.1.4

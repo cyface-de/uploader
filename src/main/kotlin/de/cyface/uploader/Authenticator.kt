@@ -60,7 +60,8 @@ interface Authenticator {
      * @throws ServerUnavailableException When no connection could be established with the server
      * @throws UnexpectedResponseCode When the server returns an unexpected response code
      * @throws AccountNotActivated When the user account is not activated
-     * @return The auth token as String. This token is only valid for some time. Just call this method before each upload.
+     * @return The auth token as String. This token is only valid for some time. Just call this method before each
+     * upload.
      */
     fun authenticate(username: String, password: String): String
 

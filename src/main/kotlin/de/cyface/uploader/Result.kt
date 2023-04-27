@@ -28,6 +28,7 @@ package de.cyface.uploader
 enum class Result {
     UPLOAD_SUCCESSFUL,
     UPLOAD_SKIPPED,
+
     @Suppress("unused") // Used by `android-backend.SyncPerformer`
     UPLOAD_FAILED,
     LOGIN_SUCCESSFUL

@@ -64,12 +64,7 @@ class HttpConnection : Http {
             url.openConnection() as HttpURLConnection
         } catch (e: IOException) {
             // openConnection() only prepares, but does not establish an actual network connection
-            throw SynchronisationException(
-                String.format(
-                    "Error %s. Unable to prepare connection for URL  %s.",
-                    e.message, url
-                ), e
-            )
+            throw SynchronisationException("Error ${e.message}. Unable to prepare connection for URL $url.", e)
         }
         if (url.path.startsWith("https://")) {
             val httpsURLConnection = connection as HttpsURLConnection
@@ -84,7 +79,7 @@ class HttpConnection : Http {
         try {
             connection.requestMethod = "POST"
         } catch (e: ProtocolException) {
-            throw IllegalStateException(e)
+            error(e)
         }
         connection.setRequestProperty("User-Agent", System.getProperty("http.agent"))
         return connection
@@ -136,18 +131,18 @@ class HttpConnection : Http {
                     e
                 )
             } else {
-                throw IllegalStateException(e) // SSLException with unknown cause
+                error(e) // SSLException with unknown cause
             }
         } catch (e: InterruptedIOException) {
             // This exception is thrown when the login request is interrupted, e.g. see MOV-761
             throw NetworkUnavailableException("Network interrupted during login", e)
         } catch (e: IOException) {
-            throw IllegalStateException(e)
+            error(e)
         }
         return try {
             readResponse(connection)
         } catch (e: UploadSessionExpired) {
-            throw IllegalStateException(e)
+            error(e)
         }
     }
 
@@ -161,7 +156,7 @@ class HttpConnection : Http {
         // For performance reasons (documentation) set either fixedLength (known length) or chunked streaming mode
         // we currently don't use fixedLengthStreamingMode as we only use this request for small login requests
         connection.setChunkedStreamingMode(0)
-        val payload = registrationPayload(email, password, captcha, activation);
+        val payload = registrationPayload(email, password, captcha, activation)
         val outputStream = initOutputStream(connection)
         try {
             outputStream.write(payload.toByteArray(DEFAULT_CHARSET))
@@ -177,18 +172,18 @@ class HttpConnection : Http {
                     e
                 )
             } else {
-                throw IllegalStateException(e) // SSLException with unknown cause
+                error(e) // SSLException with unknown cause
             }
         } catch (e: InterruptedIOException) {
             // This exception is thrown when the request is interrupted, e.g. see MOV-761
             throw NetworkUnavailableException("Network interrupted during login", e)
         } catch (e: IOException) {
-            throw IllegalStateException(e)
+            error(e)
         }
         return try {
             readResponse(connection)
         } catch (e: UploadSessionExpired) {
-            throw IllegalStateException(e)
+            error(e)
         }
     }
 
@@ -197,7 +192,8 @@ class HttpConnection : Http {
     }
 
     private fun registrationPayload(email: String, password: String, captcha: String, template: Activation): String {
-        return "{\"email\":\"$email\",\"password\":\"$password\",\"captcha\":\"$captcha\",\"template\":\"${template.name}\"}"
+        return "{\"email\":\"$email\",\"password\":\"$password\",\"captcha\":\"$captcha\",\"template\":\"" +
+            "${template.name}\"}"
     }
 
     private fun gzip(input: ByteArray): ByteArray {
@@ -217,8 +213,8 @@ class HttpConnection : Http {
             } finally {
                 gzipOutputStream?.close()
             }
-        } catch (e: IOException) {
-            throw IllegalStateException("Failed to gzip.")
+        } catch (@Suppress("SwallowedException") e: IOException) {
+            error("Failed to gzip.")
         }
     }
 
@@ -281,9 +277,11 @@ class HttpConnection : Http {
             responseCode = connection.responseCode
             responseMessage = connection.responseMessage
             val responseBody = readResponseBody(connection)
-            if (responseCode in 200..299) {
+            if (responseCode in SUCCESS_CODE_START..SUCCESS_CODE_END) {
                 DefaultUploader.handleSuccess(HttpResponse(responseCode, responseBody, responseMessage))
-            } else DefaultUploader.handleError(HttpResponse(responseCode, responseBody, responseMessage))
+            } else {
+                DefaultUploader.handleError(HttpResponse(responseCode, responseBody, responseMessage))
+            }
         } catch (e: IOException) {
             throw SynchronisationException(e)
         }
@@ -296,12 +294,10 @@ class HttpConnection : Http {
      * @return the [HttpResponse] body
      */
     private fun readResponseBody(connection: HttpURLConnection): String {
-
         // First try to read and return a success response body
         return try {
             DefaultUploader.readInputStream(connection.inputStream)
-        } catch (e: IOException) {
-
+        } catch (@Suppress("SwallowedException") e: IOException) {
             // When reading the InputStream fails, we check if there is an ErrorStream to read from
             // (For details see https://developer.android.com/reference/java/net/HttpURLConnection)
             val errorStream = connection.errorStream ?: return ""
@@ -317,5 +313,8 @@ class HttpConnection : Http {
          * The logger used to log messages from this class. Configure it using <tt>src/main/resources/logback.xml</tt>.
          */
         private val LOGGER = LoggerFactory.getLogger(HttpConnection::class.java)
+
+        private const val SUCCESS_CODE_START = 200
+        private const val SUCCESS_CODE_END = 299
     }
 }

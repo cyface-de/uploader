@@ -29,18 +29,18 @@ class AccountNotActivated : Exception {
     /**
      * @param detailedMessage A more detailed message explaining the context for this `Exception`.
      */
-    constructor(detailedMessage: String?) : super(detailedMessage) {}
+    constructor(detailedMessage: String?) : super(detailedMessage)
 
     /**
      * @param detailedMessage A more detailed message explaining the context for this `Exception`.
      * @param cause The `Exception` that caused this one.
      */
     @Suppress("unused") // Part of the API
-    constructor(detailedMessage: String?, cause: Exception?) : super(detailedMessage, cause) {}
+    constructor(detailedMessage: String?, cause: Exception?) : super(detailedMessage, cause)
 
     /**
      * @param cause The `Exception` that caused this one.
      */
     @Suppress("unused") // Part of the API
-    constructor(cause: Exception?) : super(cause) {}
+    constructor(cause: Exception?) : super(cause)
 }

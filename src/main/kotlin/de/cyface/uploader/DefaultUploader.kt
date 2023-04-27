@@ -61,7 +61,8 @@ import javax.net.ssl.SSLException
 /**
  * Implementation of the [Uploader].
  *
- * To use this interface just call [DefaultUploader.upload] with an authentication token, e.g. from [DefaultAuthenticator.authenticate].
+ * To use this interface just call [DefaultUploader.upload] with an authentication token, e.g. from
+ * [DefaultAuthenticator.authenticate].
  *
  * @author Armin Schnabel
  * @version 1.0.0
@@ -78,7 +79,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         file: File,
         progressListener: UploadProgressListener
     ): Result {
-
         return try {
             val jwtBearer = "Bearer $jwtToken"
 
@@ -167,7 +167,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         AccountNotActivated::class
     )
     private fun readResponse(response: com.google.api.client.http.HttpResponse, jsonFactory: JsonFactory): Result {
-
         // Read response from connection
         val responseCode = response.statusCode
         val responseMessage = response.statusMessage
@@ -179,8 +178,10 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             val details = e.details
             if (details != null) {
                 handleError(HttpResponse(responseCode, details.message, responseMessage))
-            } else handleError(HttpResponse(responseCode, e.toString(), responseMessage))
-            // TODO: Our server should only add JSON bodies to error responses or else there is no
+            } else {
+                handleError(HttpResponse(responseCode, e.toString(), responseMessage))
+            }
+            // Our server should only add JSON bodies to error responses or else there is no
             // way to read the error body with the Google API client library
         }
     }
@@ -201,7 +202,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         response: com.google.api.client.http.HttpResponse,
         jsonFactory: JsonFactory
     ): String {
-
         // See `uploader.upload`: Handle error parsing correctly
         if (!response.isSuccessStatusCode) {
             throw GoogleJsonResponseException.from(jsonFactory, response)
@@ -235,7 +235,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         companion object {
 
             /**
-             * The logger used to log messages from this class. Configure it using <tt>src/main/resources/logback.xml</tt>.
+             * The logger used to log messages from this class. Configure it using
+             * <tt>src/main/resources/logback.xml</tt>.
              */
             private val LOGGER = LoggerFactory.getLogger(ProgressHandler::class.java)
         }
@@ -254,8 +255,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         val DEFAULT_CHARSET = Charsets.UTF_8
 
         /**
-         * The status code returned when the MultiPart request is erroneous, e.g. when there is not exactly onf file or a
-         * syntax error.
+         * The status code returned when the MultiPart request is erroneous, e.g. when there is not exactly onf file
+         * or a syntax error.
          */
         @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         const val HTTP_ENTITY_NOT_PROCESSABLE = 422
@@ -283,7 +284,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         /**
          * Http code which indicates that the upload intended by the client should be skipped.
          *
-         * The server is not interested in the data, e.g. or missing location data or data from a location of no interest.
+         * The server is not interested in the data, e.g. or missing location data or data from a location of no
+         * interest.
          */
         private const val SKIP_UPLOAD = 412
 
@@ -332,7 +334,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         @JvmStatic
         fun handleSuccess(response: HttpResponse): Result {
-
             // Handle known success responses
             when (response.responseCode) {
                 HttpURLConnection.HTTP_OK -> {
@@ -345,7 +346,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                     return Result.UPLOAD_SUCCESSFUL
                 }
             }
-            throw IllegalStateException("Unknown success code: ${response.responseCode}")
+            error("Unknown success code: ${response.responseCode}")
         }
 
         @Throws(
@@ -363,7 +364,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         @JvmStatic
         fun handleError(response: HttpResponse): Result {
-
             // Handle known error responses
             return when (response.responseCode) {
                 HttpURLConnection.HTTP_BAD_REQUEST -> {
@@ -399,7 +399,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
                 PAYLOAD_TOO_LARGE -> {
                     LOGGER.warn("413: Payload too large")
-                    throw IllegalStateException(response.body)
+                    error(response.body)
                 }
 
                 HTTP_ENTITY_NOT_PROCESSABLE -> {
@@ -436,7 +436,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
          * @return the [String] read from the InputStream. If an I/O error occurs while reading from the stream, the
          * already read string is returned which might my empty or cut short.
          */
-        @Suppress("MemberVisibilityCanBePrivate") // Part of the API
+        @Suppress("MemberVisibilityCanBePrivate", "NestedBlockDepth") // Part of the API
         @JvmStatic
         fun readInputStream(inputStream: InputStream): String {
             try {
@@ -452,10 +452,10 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                         return responseString.toString()
                     }
                 } catch (e: UnsupportedEncodingException) {
-                    throw IllegalStateException(e)
+                    error(e)
                 }
             } catch (e: IOException) {
-                throw IllegalStateException(e)
+                error(e)
             }
         }
     }

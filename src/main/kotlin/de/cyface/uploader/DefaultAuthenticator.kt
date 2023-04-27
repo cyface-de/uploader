@@ -44,7 +44,6 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
     private val http: HttpConnection = HttpConnection()
 
     override fun authenticate(username: String, password: String): String {
-
         var connection: HttpURLConnection? = null
         val authToken: String
         try {
@@ -56,15 +55,17 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
 
             // Make sure the successful response contains an Authorization token
             authToken = connection.getHeaderField("Authorization")
-            check(!(loginResponse == Result.LOGIN_SUCCESSFUL && authToken == null)) { "Login successful but response does not contain a token" }
+            check(!(loginResponse == Result.LOGIN_SUCCESSFUL && authToken == null)) {
+                "Login successful but response does not contain a token"
+            }
         } catch (e: BadRequestException) {
-            throw IllegalStateException(e) // API definition does not define those errors
+            error(e) // API definition does not define those errors
         } catch (e: InternalServerErrorException) {
-            throw IllegalStateException(e)
+            error(e)
         } catch (e: EntityNotParsableException) {
-            throw IllegalStateException(e)
+            error(e)
         } catch (e: ConflictException) {
-            throw IllegalStateException(e)
+            error(e)
         } finally {
             connection?.disconnect()
         }

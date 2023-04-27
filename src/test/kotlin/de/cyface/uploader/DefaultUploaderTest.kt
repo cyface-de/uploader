@@ -18,12 +18,11 @@
  */
 package de.cyface.uploader
 
+import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
 import de.cyface.model.MeasurementIdentifier
 import de.cyface.model.Modality
 import de.cyface.model.RequestMetaData
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Test
 
 /**
@@ -41,8 +40,8 @@ class DefaultUploaderTest {
     fun testPreRequestBody() {
         val deviceId = "testDevi-ce00-42b6-a840-1b70d30094b8" // Must be a valid UUID
         val id = MeasurementIdentifier(deviceId, 78)
-        val startLocation = RequestMetaData.GeoLocation(1000000000L,51.1,13.1)
-        val endLocation = RequestMetaData.GeoLocation(1000010000L,51.2,13.2)
+        val startLocation = RequestMetaData.GeoLocation(1000000000L, 51.1, 13.1)
+        val endLocation = RequestMetaData.GeoLocation(1000010000L, 51.2, 13.2)
         val metaData = RequestMetaData(
             id.deviceIdentifier,
             id.measurementIdentifier.toString(),
@@ -77,6 +76,6 @@ class DefaultUploaderTest {
         expected["locationCount"] = "5"
         expected["modality"] = "BICYCLE"
         expected["formatVersion"] = "3"
-        assertThat(result,`is`(equalTo(expected)))
+        assertThat(result, equalTo(expected))
     }
 }
