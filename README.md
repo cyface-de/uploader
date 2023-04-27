@@ -174,7 +174,7 @@ The library uses [Gradle](https://gradle.org/) as the build system
 See [Cyface Collector
 Readme](https://github.com/cyface-de/data-collector#release-a-new-version)
 
-- `version` in root `build.gradle` is automatically set by the CI
+- `version` in root `build.gradle.kts` is automatically set by the CI
 - Just tag the release and push the tag to Github
 - The Github package is automatically published when a new version is
   tagged and pushed by our [Github
@@ -196,7 +196,7 @@ these credentials is described
 To publish a new version of an artifact you need to:
 
 1.  Increase the version number of the subproject within the
-    `build.gradle` file
+    `build.gradle.kts` file
 
 2.  Call `./gradlew publish`
 
