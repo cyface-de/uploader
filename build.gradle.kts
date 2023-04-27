@@ -61,7 +61,7 @@ plugins {
 }
 
 group = "de.cyface"
-version = "1.0.0-beta3" // Automatically overwritten by CI
+version = "0.0.0" // Automatically overwritten by CI
 
 // Versions of dependencies
 extra["slf4jVersion"] = "2.0.7"
@@ -77,10 +77,6 @@ extra["hamKrestVersion"] = "1.8.0.1"
 extra["mockitoKotlinVersion"] = "4.1.0"
 extra["dokkaVersion"] = "1.8.10"
 extra["detektVersion"] = "1.22.0"
-
-tasks.withType<JavaCompile>() {
-  options.encoding = "UTF-8"
-}
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlinOptions {
@@ -137,8 +133,14 @@ dependencies {
   detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:${project.extra["detektVersion"]}")
 }
 
-// Definitions for the maven-publish Plugin
+// Maven-publish configuration
 publishing {
+  publications {
+    create<MavenPublication>("uploaderLibrary") {
+      from(components["java"])
+    }
+  }
+
   // The following repositories are used to publish artifacts to.
   repositories {
     maven {
@@ -156,7 +158,7 @@ publishing {
   }
 }
 
-// The following repositories are used to load artifacts from.
+// Dependency sources
 repositories {
   mavenCentral()
   maven {
@@ -169,16 +171,6 @@ repositories {
     credentials {
       username = (project.findProperty("gpr.user") ?: System.getenv("USERNAME")) as String
       password = (project.findProperty("gpr.key") ?: System.getenv("PASSWORD")) as String
-    }
-  }
-}
-
-publishing {
-  publications {
-    //noinspection GroovyAssignabilityCheck
-    create<MavenPublication>("publishLibrary") {
-      //noinspection GroovyAssignabilityCheck
-      from(components["java"])
     }
   }
 }
