@@ -49,7 +49,6 @@ plugins {
   //noinspection SpellCheckingInspection
   id("org.barfuin.gradle.taskinfo").version("2.1.0")
 
-  id("java-library") // FIXME: See if this works without this
   id("maven-publish")
   kotlin("jvm").version("1.8.20")
 
