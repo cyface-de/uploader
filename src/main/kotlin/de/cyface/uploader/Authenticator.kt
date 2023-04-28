@@ -18,20 +18,12 @@
  */
 package de.cyface.uploader
 
-import de.cyface.uploader.exception.AccountNotActivated
-import de.cyface.uploader.exception.BadRequestException
-import de.cyface.uploader.exception.ConflictException
-import de.cyface.uploader.exception.EntityNotParsableException
-import de.cyface.uploader.exception.ForbiddenException
-import de.cyface.uploader.exception.HostUnresolvable
-import de.cyface.uploader.exception.InternalServerErrorException
-import de.cyface.uploader.exception.NetworkUnavailableException
-import de.cyface.uploader.exception.ServerUnavailableException
-import de.cyface.uploader.exception.SynchronisationException
-import de.cyface.uploader.exception.TooManyRequestsException
-import de.cyface.uploader.exception.UnauthorizedException
-import de.cyface.uploader.exception.UnexpectedResponseCode
+import de.cyface.model.Activation
+import de.cyface.uploader.exception.LoginFailed
+import de.cyface.uploader.exception.RegistrationFailed
+import java.net.MalformedURLException
 import java.net.URL
+import kotlin.jvm.Throws
 
 /**
  * Interface for authenticating to a Cyface Data Collector.
@@ -47,26 +39,37 @@ interface Authenticator {
      *
      * @param username The username of the user to authenticate
      * @param password The password of the user to authenticate
-     * @throws SynchronisationException If an IOException occurred while reading the response code.
-     * @throws BadRequestException When server returns `HttpURLConnection#HTTP_BAD_REQUEST`
-     * @throws UnauthorizedException When the server returns `HttpURLConnection#HTTP_UNAUTHORIZED`
-     * @throws ForbiddenException When the server returns `HttpURLConnection#HTTP_FORBIDDEN`
-     * @throws ConflictException When the server returns `HttpURLConnection#HTTP_CONFLICT`
-     * @throws EntityNotParsableException When the server returns [DefaultUploader.HTTP_ENTITY_NOT_PROCESSABLE]
-     * @throws InternalServerErrorException When the server returns `HttpURLConnection#HTTP_INTERNAL_ERROR`
-     * @throws NetworkUnavailableException When the network used for transmission becomes unavailable.
-     * @throws TooManyRequestsException When the server returns [DefaultUploader.HTTP_TOO_MANY_REQUESTS]
-     * @throws HostUnresolvable e.g. when the phone is connected to a network which is not connected to the internet
-     * @throws ServerUnavailableException When no connection could be established with the server
-     * @throws UnexpectedResponseCode When the server returns an unexpected response code
-     * @throws AccountNotActivated When the user account is not activated
+     * @throws LoginFailed when an expected error occurred, so that the UI can handle this.
      * @return The auth token as String. This token is only valid for some time. Just call this method before each
      * upload.
      */
+    @Throws(LoginFailed::class)
     fun authenticate(username: String, password: String): String
 
     /**
-     * @return the endpoint which will be used for authentication.
+     * Register a new user with the Cyface Data Collector server available at the API endpoint.
+     *
+     * @param email The email part of the credentials
+     * @param password The password part of the credentials
+     * @param captcha The captcha token
+     * @param activation The template to use for the activation email.
+     * @throws RegistrationFailed when an expected error occurred, so that the UI can handle this.
+     * @return [Result.UPLOAD_SUCCESSFUL] if successful.
      */
-    fun endpoint(): URL
+    @Throws(RegistrationFailed::class)
+    fun register(email: String, password: String, captcha: String, activation: Activation): Result
+
+    /**
+     * @return the endpoint which will be used for authentication.
+     * @throws MalformedURLException if the endpoint address provided is malformed.
+     */
+    @Throws(MalformedURLException::class)
+    fun loginEndpoint(): URL
+
+    /**
+     * @return the endpoint which will be used for registration.
+     * @throws MalformedURLException if the endpoint address provided is malformed.
+     */
+    @Throws(MalformedURLException::class)
+    fun registrationEndpoint(): URL
 }

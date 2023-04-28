@@ -58,7 +58,6 @@ import javax.net.ssl.SSLSession
  */
 class HttpConnection : Http {
 
-    @Throws(SynchronisationException::class)
     override fun open(url: URL, hasBinaryContent: Boolean): HttpURLConnection {
         val connection = try {
             url.openConnection() as HttpURLConnection
@@ -85,21 +84,6 @@ class HttpConnection : Http {
         return connection
     }
 
-    @Throws(
-        SynchronisationException::class,
-        UnauthorizedException::class,
-        BadRequestException::class,
-        InternalServerErrorException::class,
-        ForbiddenException::class,
-        EntityNotParsableException::class,
-        ConflictException::class,
-        NetworkUnavailableException::class,
-        TooManyRequestsException::class,
-        HostUnresolvable::class,
-        ServerUnavailableException::class,
-        UnexpectedResponseCode::class,
-        AccountNotActivated::class
-    )
     override fun login(
         connection: HttpURLConnection,
         username: String,
@@ -126,10 +110,7 @@ class HttpConnection : Http {
             val message = e.message
             if (message != null && message.contains("I/O error during system call, Broken pipe")) {
                 LOGGER.warn("Caught SSLException: ${e.message}")
-                throw NetworkUnavailableException(
-                    "Network became unavailable during transmission.",
-                    e
-                )
+                throw NetworkUnavailableException("Network became unavailable during transmission.", e)
             } else {
                 error(e) // SSLException with unknown cause
             }
@@ -142,7 +123,7 @@ class HttpConnection : Http {
         return try {
             readResponse(connection)
         } catch (e: UploadSessionExpired) {
-            error(e)
+            error(e) // unexpected for login
         }
     }
 
@@ -254,6 +235,7 @@ class HttpConnection : Http {
      * @throws EntityNotParsableException When the server returns [.HTTP_ENTITY_NOT_PROCESSABLE]
      * @throws InternalServerErrorException When the server returns `HttpURLConnection#HTTP_INTERNAL_ERROR`
      * @throws TooManyRequestsException When the server returns [.HTTP_TOO_MANY_REQUESTS]
+     * @throws UploadSessionExpired When the server returns [HttpURLConnection.HTTP_NOT_FOUND]
      * @throws UnexpectedResponseCode When the server returns an unexpected response code
      * @throws AccountNotActivated When the user account is not activated
      */

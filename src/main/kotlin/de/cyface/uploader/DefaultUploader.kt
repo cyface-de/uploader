@@ -42,6 +42,7 @@ import de.cyface.uploader.exception.SynchronizationInterruptedException
 import de.cyface.uploader.exception.TooManyRequestsException
 import de.cyface.uploader.exception.UnauthorizedException
 import de.cyface.uploader.exception.UnexpectedResponseCode
+import de.cyface.uploader.exception.UploadFailed
 import de.cyface.uploader.exception.UploadSessionExpired
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
@@ -54,6 +55,7 @@ import java.io.InputStreamReader
 import java.io.InterruptedIOException
 import java.io.UnsupportedEncodingException
 import java.net.HttpURLConnection
+import java.net.MalformedURLException
 import java.net.SocketTimeoutException
 import java.net.URL
 import javax.net.ssl.SSLException
@@ -119,34 +121,77 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             } finally {
                 response.disconnect()
             }
-        } catch (e: SocketTimeoutException) {
+        }
+
+        // Soft catch errors in `UploadFailed` exception so that the caller can handle this without crashing.
+        // This way the SDK's `SyncPerformer` can determine if the sync should be repeated.
+        catch (e: SocketTimeoutException) {
             // Happened on emulator when endpoint is local network instead of 10.0.2.2 [DAT-727]
-            throw ServerUnavailableException(e)
+            // Server not reachable. Try again later.
+            throw UploadFailed(ServerUnavailableException(e))
         } catch (e: SSLException) {
             LOGGER.warn("Caught SSLException: ${e.message}")
-            // Thrown by OkHttp when the network is no longer available [DAT-740]
+            // Thrown by OkHttp when the network is no longer available [DAT-740]. Try again later.
             val message = e.message
             if (message != null && message.contains("I/O error during system call, Broken pipe")) {
-                throw NetworkUnavailableException("Network became unavailable during upload.")
+                throw UploadFailed(NetworkUnavailableException("Network became unavailable during upload."))
             }
-            throw SynchronisationException(e)
+            throw UploadFailed(SynchronisationException(e))
         } catch (e: InterruptedIOException) {
             LOGGER.warn("Caught InterruptedIOException: ${e.message}")
             val message = e.message
             if (message != null && message.contains("thread interrupted")) {
-                // Request interrupted [DAT-741]
-                throw NetworkUnavailableException("Network interrupted during upload", e)
+                // Request interrupted [DAT-741]. Try again later.
+                throw UploadFailed(NetworkUnavailableException("Network interrupted during upload", e))
             }
-            throw SynchronisationException(e)
+            // InterruptedIOException while reading the response. Try again later.
+            throw UploadFailed(SynchronisationException(e))
         } catch (e: IOException) {
             LOGGER.warn("Caught IOException: ${e.message}")
             val message = e.message
             if (message != null && message.contains("unexpected end of stream")) {
-                // Unstable WiFi connection [DAT-742]
+                // Unstable Wi-Fi connection [DAT-742]. transmission stream ended too early, likely because the sync
+                // thread was interrupted (sync canceled). Try again later.
                 throw SynchronizationInterruptedException("Upload interrupted", e)
             }
-            throw SynchronisationException(e)
+            // IOException while reading the response. Try again later.
+            throw UploadFailed(SynchronisationException(e))
+        } catch (e: MeasurementTooLarge) {
+            // File is too large to be uploaded. Handle in caller (e.g. skip the upload).
+            // The max size is currently static and set to 100 MB which should be about 44 hours of 100 Hz measurement.
+            throw UploadFailed(e)
+        } catch (e: BadRequestException) {
+            throw UploadFailed(e) // `HTTP_BAD_REQUEST` (400).
+        } catch (e: UnauthorizedException) {
+            throw UploadFailed(e) // `HTTP_UNAUTHORIZED` (401).
+        } catch (e: ForbiddenException) {
+            throw UploadFailed(e) // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in caller.
+        } catch (e: ConflictException) {
+            throw UploadFailed(e) // `HTTP_CONFLICT` (409). Already uploaded. Handle in caller (e.g. mark as synced).
+        } catch (e: EntityNotParsableException) {
+            throw UploadFailed(e) // `HTTP_ENTITY_NOT_PROCESSABLE` (422).
+        } catch (e: InternalServerErrorException) {
+            throw UploadFailed(e) // `HTTP_INTERNAL_ERROR` (500).
+        } catch (e: TooManyRequestsException) {
+            throw UploadFailed(e) // `HTTP_TOO_MANY_REQUESTS` (429). Try again later.
+        } catch (e: SynchronisationException) {
+            throw UploadFailed(e) // IOException while reading the response. Try again later.
+        } catch (e: UploadSessionExpired) {
+            throw UploadFailed(e) // `HTTP_NOT_FOUND` (404). Try again.
+        } catch (e: UnexpectedResponseCode) {
+            throw UploadFailed(e) // Unexpected response code. Should be reported to the server admin.
+        } catch (e: AccountNotActivated) {
+            throw UploadFailed(e) // `PRECONDITION_REQUIRED` (428). Shouldn't happen during upload, report to server admin.
         }
+
+        // Crash unexpected errors hard
+        catch (e: MalformedURLException) {
+            error(e) // The endpoint url is malformed.
+        }
+        // This is not yet thrown as a specific exception.
+        /*catch (e: HostUnresolvable) {
+            throw LoginFailed(e) // Network without internet connection. Try again later.
+        }*/
     }
 
     override fun endpoint(): URL {

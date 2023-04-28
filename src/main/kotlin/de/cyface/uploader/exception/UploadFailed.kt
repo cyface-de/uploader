@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Cyface GmbH
+ * Copyright 2023 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -19,18 +19,17 @@
 package de.cyface.uploader.exception
 
 /**
- * An `Exception` thrown when the server returns `HTTP_NOT_FOUND` (404).
- *
- * This is the case when the upload session expired. The Client should restart the upload.
+ * An `Exception` thrown when there is an expected error with the upload request so the UI can handle this.
  *
  * @author Armin Schnabel
- * @version 1.0.1
- * @since 1.0.0
+ * @version 1.0.0
+ * @since 7.7.0
  */
-class UploadSessionExpired : Exception {
+class UploadFailed : Exception {
     /**
      * @param detailedMessage A more detailed message explaining the context for this `Exception`.
      */
+    @Suppress("unused") // Part of the API
     constructor(detailedMessage: String?) : super(detailedMessage)
 
     /**
