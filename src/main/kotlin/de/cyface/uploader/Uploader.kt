@@ -41,7 +41,8 @@ interface Uploader {
      * @param file The data file to upload via this post request.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
-     * @return [Result.UPLOAD_SUCCESSFUL] when successful and [Result.UPLOAD_SKIPPED] when the server is not interested in the data.
+     * @return [Result.UPLOAD_SUCCESSFUL] when successful and [Result.UPLOAD_SKIPPED] when the server is
+     * not interested in the data.
      */
     @Throws(UploadFailed::class)
     @Suppress("unused") // Part of the API

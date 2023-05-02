@@ -56,6 +56,7 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
 
     private val http: HttpConnection = HttpConnection()
 
+    @Suppress("CyclomaticComplexMethod")
     override fun authenticate(username: String, password: String): String {
         var connection: HttpURLConnection? = null
         val authToken: String
@@ -110,12 +111,12 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
             error(e) // `HTTP_INTERNAL_ERROR` (500).
         } catch (e: MalformedURLException) {
             error(e) // The endpoint url is malformed.
-        }
-        finally {
+        } finally {
             connection?.disconnect()
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     override fun register(email: String, password: String, captcha: String, activation: Activation): Result {
         var connection: HttpURLConnection? = null
         try {
@@ -134,7 +135,8 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
         } catch (e: SynchronisationException) {
             throw RegistrationFailed(e) // IOException while reading the response. Try again later.
         } catch (e: ForbiddenException) {
-            throw RegistrationFailed(e) // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in UI.
+            // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in UI.
+            throw RegistrationFailed(e)
         } catch (e: NetworkUnavailableException) {
             throw RegistrationFailed(e) // Network disappeared. Try again later.
         } catch (e: TooManyRequestsException) {
@@ -143,7 +145,7 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
             throw RegistrationFailed(e) // Network without internet connection. Try again later.
         } catch (e: ServerUnavailableException) {
             throw RegistrationFailed(e) // Server not reachable. Try again later.
-        }  catch (e: UnexpectedResponseCode) {
+        } catch (e: UnexpectedResponseCode) {
             // We currently show a UI error. Is this also reported to Sentry? Then it's ok not to throw this hard.
             throw RegistrationFailed(e) // server returns an unexpected response code
         }
@@ -161,8 +163,7 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
             error(e) // `PRECONDITION_REQUIRED` (428). Should not happen during registration.
         } catch (e: MalformedURLException) {
             error(e) // The endpoint url is malformed.
-        }
-        finally {
+        } finally {
             connection?.disconnect()
         }
     }

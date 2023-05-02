@@ -73,7 +73,7 @@ import javax.net.ssl.SSLException
  */
 class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
-    @Suppress("unused")
+    @Suppress("unused", "CyclomaticComplexMethod", "LongMethod")
     override // Part of the API
     fun upload(
         jwtToken: String,
@@ -165,7 +165,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         } catch (e: UnauthorizedException) {
             throw UploadFailed(e) // `HTTP_UNAUTHORIZED` (401).
         } catch (e: ForbiddenException) {
-            throw UploadFailed(e) // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in caller.
+            // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in caller.
+            throw UploadFailed(e)
         } catch (e: ConflictException) {
             throw UploadFailed(e) // `HTTP_CONFLICT` (409). Already uploaded. Handle in caller (e.g. mark as synced).
         } catch (e: EntityNotParsableException) {
@@ -181,7 +182,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         } catch (e: UnexpectedResponseCode) {
             throw UploadFailed(e) // Unexpected response code. Should be reported to the server admin.
         } catch (e: AccountNotActivated) {
-            throw UploadFailed(e) // `PRECONDITION_REQUIRED` (428). Shouldn't happen during upload, report to server admin.
+            // `PRECONDITION_REQUIRED` (428). Shouldn't happen during upload, report to server admin.
+            throw UploadFailed(e)
         }
 
         // Crash unexpected errors hard
