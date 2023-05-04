@@ -141,10 +141,12 @@ val result = uploader.upload(token, metaData, binary, processListener)
 
 The result is
 
-- `Result.UPLOAD_SUCCESSFUL` when the upload was successful
+- `Result.UPLOAD_SUCCESSFUL` when the upload was successful or the data already exists on the server
 - `Result.UPLOAD_SKIPPED` when the server is not interested in the data (e.g. data without locations)
 
-In case of an error, an exception will be thrown:
+In case of an error, an `UploadFailed` exception will be thrown.
+
+*The cause for the `UploadFailed` may be one of the following (the list may not be complete or stable):*
 
 - `SynchronisationException` - If an IOException occurred during synchronization. This usually means that you should try again later.
 - `BadRequestException` - When server returns `HttpURLConnection#HTTP_BAD_REQUEST` (`400`)

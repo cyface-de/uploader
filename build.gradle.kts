@@ -19,8 +19,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-//import org.jetbrains.dokka.base.DokkaBase
-//import org.jetbrains.dokka.base.DokkaBaseConfiguration
 import java.net.URL
 /**
  * The build gradle file for the Cyface Uploader.
@@ -46,7 +44,7 @@ plugins {
   // For building executable fat jars
   id("com.github.johnrengelman.shadow").version("7.1.2")
   // Plugin to display the Gradle task graph
-  //noinspection SpellCheckingInspection
+  @Suppress("SpellCheckingInspection")
   id("org.barfuin.gradle.taskinfo").version("2.1.0")
 
   id("maven-publish")
@@ -117,6 +115,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-params")  // Required for parameterized tests
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
   testImplementation("org.junit.jupiter:junit-jupiter:${project.extra["junitVersion"]}")
+  @Suppress("SpellCheckingInspection")
   testImplementation("com.natpryce:hamkrest:${project.extra["hamKrestVersion"]}")
   testImplementation(kotlin("reflect")) // Required by hamkrest
   testImplementation(kotlin("test"))
