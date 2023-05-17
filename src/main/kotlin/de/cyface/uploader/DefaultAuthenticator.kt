@@ -47,7 +47,7 @@ import java.net.URL
  * Usually the token should be generated just before each [DefaultUploader.upload] call.
  *
  * @author Armin Schnabel
- * @version 1.0.0
+ * @version 1.0.1
  * @since 1.0.0
  * @property apiEndpoint An API endpoint running a Cyface data collector service, like `https://some.url/api/v3`
  */
@@ -117,13 +117,19 @@ class DefaultAuthenticator(private val apiEndpoint: String) : Authenticator {
     }
 
     @Suppress("CyclomaticComplexMethod")
-    override fun register(email: String, password: String, captcha: String, activation: Activation): Result {
+    override fun register(
+        email: String,
+        password: String,
+        captcha: String,
+        activation: Activation,
+        group: String
+    ): Result {
         var connection: HttpURLConnection? = null
         try {
             connection = http.open(registrationEndpoint(), false)
 
             // Try to send the request and handle expected errors
-            val response = http.register(connection, email, password, captcha, activation)
+            val response = http.register(connection, email, password, captcha, activation, group)
             LOGGER.debug("Response $response")
             return response
         }

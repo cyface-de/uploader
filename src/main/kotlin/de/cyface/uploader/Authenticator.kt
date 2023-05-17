@@ -53,11 +53,12 @@ interface Authenticator {
      * @param password The password part of the credentials
      * @param captcha The captcha token
      * @param activation The template to use for the activation email.
+     * @param group The database identifier of the group the user selected during registration
      * @throws RegistrationFailed when an expected error occurred, so that the UI can handle this.
      * @return [Result.UPLOAD_SUCCESSFUL] if successful.
      */
     @Throws(RegistrationFailed::class)
-    fun register(email: String, password: String, captcha: String, activation: Activation): Result
+    fun register(email: String, password: String, captcha: String, activation: Activation, group: String): Result
 
     /**
      * @return the endpoint which will be used for authentication.
