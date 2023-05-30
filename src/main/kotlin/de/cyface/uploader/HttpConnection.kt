@@ -132,12 +132,13 @@ class HttpConnection : Http {
         email: String,
         password: String,
         captcha: String,
-        activation: Activation
+        activation: Activation,
+        group: String
     ): Result {
         // For performance reasons (documentation) set either fixedLength (known length) or chunked streaming mode
         // we currently don't use fixedLengthStreamingMode as we only use this request for small login requests
         connection.setChunkedStreamingMode(0)
-        val payload = registrationPayload(email, password, captcha, activation)
+        val payload = registrationPayload(email, password, captcha, activation, group)
         val outputStream = initOutputStream(connection)
         try {
             outputStream.write(payload.toByteArray(DEFAULT_CHARSET))
@@ -172,9 +173,15 @@ class HttpConnection : Http {
         return "{\"username\":\"$username\",\"password\":\"$password\"}"
     }
 
-    private fun registrationPayload(email: String, password: String, captcha: String, template: Activation): String {
+    private fun registrationPayload(
+        email: String,
+        password: String,
+        captcha: String,
+        template: Activation,
+        group: String
+    ): String {
         return "{\"email\":\"$email\",\"password\":\"$password\",\"captcha\":\"$captcha\",\"template\":\"" +
-            "${template.name}\"}"
+            "${template.name}\",\"group\":\"$group\"}"
     }
 
     private fun gzip(input: ByteArray): ByteArray {

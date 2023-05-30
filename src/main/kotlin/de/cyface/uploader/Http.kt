@@ -102,6 +102,7 @@ interface Http {
      * @param password The password part of the credentials
      * @param captcha The captcha token
      * @param activation The template to use for the activation email.
+     * @param group The database identifier of the group the user selected during registration
      * @throws SynchronisationException If an IOException occurred while reading the response code.
      * @throws BadRequestException When server returns `HttpURLConnection#HTTP_BAD_REQUEST`
      * @throws UnauthorizedException When the server returns `HttpURLConnection#HTTP_UNAUTHORIZED`
@@ -137,6 +138,7 @@ interface Http {
         email: String,
         password: String,
         captcha: String,
-        activation: Activation
+        activation: Activation,
+        group: String
     ): Result
 }
