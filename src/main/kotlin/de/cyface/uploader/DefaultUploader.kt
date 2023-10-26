@@ -84,41 +84,43 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             val jwtBearer = "Bearer $jwtToken"
 
             // Uploader
-            val mediaContent =
-                InputStreamContent("application/octet-stream", BufferedInputStream(FileInputStream(file)))
-            mediaContent.length = file.length()
-            LOGGER.debug("mediaContent.length: ${mediaContent.length}")
-            val transport = NetHttpTransport() // Use Builder to modify behaviour
-            val httpRequestInitializer = RequestInitializeHandler(metaData, jwtBearer)
-            val uploader = MediaHttpUploader(mediaContent, transport, httpRequestInitializer)
+            FileInputStream(file).use { fis ->
+                val bufferedInputStream = BufferedInputStream(fis)
+                val mediaContent = InputStreamContent("application/octet-stream", bufferedInputStream)
+                mediaContent.length = file.length()
+                LOGGER.debug("mediaContent.length: ${mediaContent.length}")
+                val transport = NetHttpTransport() // Use Builder to modify behaviour
+                val httpRequestInitializer = RequestInitializeHandler(metaData, jwtBearer)
+                val uploader = MediaHttpUploader(mediaContent, transport, httpRequestInitializer)
 
-            // We currently cannot merge multiple upload-chunk requests into one file on server side.
-            // Thus, we prevent slicing the file into multiple files by increasing the chunk size.
-            // If the file is larger sync would be successful but only the 1st chunk received DAT-730.
-            // i.e. we throw an exception (which skips the upload) for too large measurements (44h+).
-            uploader.chunkSize = MAX_CHUNK_SIZE
-            if (file.length() > MAX_CHUNK_SIZE) {
-                throw MeasurementTooLarge("Transfer file is too large: ${file.length()}")
-            }
+                // We currently cannot merge multiple upload-chunk requests into one file on server side.
+                // Thus, we prevent slicing the file into multiple files by increasing the chunk size.
+                // If the file is larger sync would be successful but only the 1st chunk received DAT-730.
+                // i.e. we throw an exception (which skips the upload) for too large measurements (44h+).
+                uploader.chunkSize = MAX_CHUNK_SIZE
+                if (file.length() > MAX_CHUNK_SIZE) {
+                    throw MeasurementTooLarge("Transfer file is too large: ${file.length()}")
+                }
 
-            // Add meta data to PreRequest
-            val jsonFactory = GsonFactory()
-            val preRequestBody = preRequestBody(metaData)
-            uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
+                // Add meta data to PreRequest
+                val jsonFactory = GsonFactory()
+                val preRequestBody = preRequestBody(metaData)
+                uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
 
-            // Vert.X currently only supports compressing "down-stream" out of the box
-            uploader.disableGZipContent = true
+                // Vert.X currently only supports compressing "down-stream" out of the box
+                uploader.disableGZipContent = true
 
-            // Progress
-            uploader.progressListener = ProgressHandler(progressListener)
+                // Progress
+                uploader.progressListener = ProgressHandler(progressListener)
 
-            // Upload
-            val requestUrl = GenericUrl(endpoint())
-            val response = uploader.upload(requestUrl)
-            try {
-                readResponse(response, jsonFactory)
-            } finally {
-                response.disconnect()
+                // Upload
+                val requestUrl = GenericUrl(endpoint())
+                val response = uploader.upload(requestUrl)
+                try {
+                    readResponse(response, jsonFactory)
+                } finally {
+                    response.disconnect()
+                }
             }
         }
 
