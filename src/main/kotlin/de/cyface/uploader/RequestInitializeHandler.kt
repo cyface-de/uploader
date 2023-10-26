@@ -72,5 +72,8 @@ class RequestInitializeHandler(
         headers["length"] = metaData.length.toString()
         headers["modality"] = metaData.modality.toString()
         headers["formatVersion"] = metaData.formatVersion.toString()
+        headers["logCount"] = metaData.logCount
+        headers["imageCount"] = metaData.imageCount
+        headers["videoCount"] = metaData.videoCount
     }
 }
