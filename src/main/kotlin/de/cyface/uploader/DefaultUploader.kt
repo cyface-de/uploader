@@ -393,6 +393,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             attributes["logCount"] = metaData.logCount.toString()
             attributes["imageCount"] = metaData.imageCount.toString()
             attributes["videoCount"] = metaData.videoCount.toString()
+            attributes["filesSize"] = metaData.filesSize.toString()
             return attributes
         }
 

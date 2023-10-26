@@ -63,7 +63,7 @@ version = "0.0.0" // Automatically overwritten by CI
 // Versions of dependencies
 extra["slf4jVersion"] = "2.0.7"
 // TODO: Check if we can remove this after we port the new auth from android-backend to this library
-extra["cyfaceSerializationVersion"] = "3.2.0-alpha1"
+extra["cyfaceSerializationVersion"] = "3.2.0-alpha2"
 extra["googleApiClientVersion"] = "2.2.0" // transmission protocol
 extra["gradleWrapperVersion"] = "7.6.1"
 

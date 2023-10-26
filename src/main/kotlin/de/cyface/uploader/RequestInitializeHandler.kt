@@ -75,5 +75,6 @@ class RequestInitializeHandler(
         headers["logCount"] = metaData.logCount
         headers["imageCount"] = metaData.imageCount
         headers["videoCount"] = metaData.videoCount
+        headers["filesSize"] = metaData.filesSize
     }
 }
