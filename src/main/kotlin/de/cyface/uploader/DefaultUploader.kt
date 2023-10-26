@@ -63,8 +63,7 @@ import javax.net.ssl.SSLException
 /**
  * Implementation of the [Uploader].
  *
- * To use this interface just call [DefaultUploader.upload] with an authentication token, e.g. from
- * [DefaultAuthenticator.authenticate].
+ * To use this interface just call [DefaultUploader.upload] with an authentication token.
  *
  * @author Armin Schnabel
  * @version 1.0.0
@@ -197,7 +196,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     }
 
     override fun endpoint(): URL {
-        return URL(DefaultAuthenticator.returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
+        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
     @Throws(
@@ -345,6 +344,20 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         private const val PAYLOAD_TOO_LARGE = 413
 
         /**
+         * Adds a trailing slash to the server URL or leaves an existing trailing slash untouched.
+         *
+         * @param url The url to format.
+         * @return The server URL with a trailing slash.
+         */
+        fun returnUrlWithTrailingSlash(url: String): String {
+            return if (url.endsWith("/")) {
+                url
+            } else {
+                "$url/"
+            }
+        }
+
+        /**
          * Assembles a `HttpContent` object which contains the metadata.
          *
          * @param metaData The metadata to convert.
@@ -355,14 +368,14 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
             // Location meta data
             if (metaData.startLocation != null) {
-                attributes["startLocLat"] = metaData.startLocation.latitude.toString()
-                attributes["startLocLon"] = metaData.startLocation.longitude.toString()
-                attributes["startLocTS"] = metaData.startLocation.timestamp.toString()
+                attributes["startLocLat"] = metaData.startLocation!!.latitude.toString()
+                attributes["startLocLon"] = metaData.startLocation!!.longitude.toString()
+                attributes["startLocTS"] = metaData.startLocation!!.timestamp.toString()
             }
             if (metaData.endLocation != null) {
-                attributes["endLocLat"] = metaData.endLocation.latitude.toString()
-                attributes["endLocLon"] = metaData.endLocation.longitude.toString()
-                attributes["endLocTS"] = metaData.endLocation.timestamp.toString()
+                attributes["endLocLat"] = metaData.endLocation!!.latitude.toString()
+                attributes["endLocLon"] = metaData.endLocation!!.longitude.toString()
+                attributes["endLocTS"] = metaData.endLocation!!.timestamp.toString()
             }
             attributes["locationCount"] = metaData.locationCount.toString()
 
@@ -373,7 +386,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             attributes["osVersion"] = metaData.operatingSystemVersion
             attributes["appVersion"] = metaData.applicationVersion
             attributes["length"] = metaData.length.toString()
-            attributes["modality"] = metaData.modality.toString()
+            attributes["modality"] = metaData.modality
             attributes["formatVersion"] = metaData.formatVersion.toString()
             attributes["logCount"] = metaData.logCount.toString()
             attributes["imageCount"] = metaData.imageCount.toString()

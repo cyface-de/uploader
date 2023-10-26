@@ -52,14 +52,14 @@ class RequestInitializeHandler(
     private fun addMetaData(metaData: RequestMetaData, headers: HttpHeaders) {
         // Location meta data
         if (metaData.startLocation != null) {
-            headers["startLocLat"] = metaData.startLocation.latitude.toString()
-            headers["startLocLon"] = metaData.startLocation.longitude.toString()
-            headers["startLocTS"] = metaData.startLocation.timestamp.toString()
+            headers["startLocLat"] = metaData.startLocation!!.latitude.toString()
+            headers["startLocLon"] = metaData.startLocation!!.longitude.toString()
+            headers["startLocTS"] = metaData.startLocation!!.timestamp.toString()
         }
         if (metaData.endLocation != null) {
-            headers["endLocLat"] = metaData.endLocation.latitude.toString()
-            headers["endLocLon"] = metaData.endLocation.longitude.toString()
-            headers["endLocTS"] = metaData.endLocation.timestamp.toString()
+            headers["endLocLat"] = metaData.endLocation!!.latitude.toString()
+            headers["endLocLon"] = metaData.endLocation!!.longitude.toString()
+            headers["endLocTS"] = metaData.endLocation!!.timestamp.toString()
         }
         headers["locationCount"] = metaData.locationCount.toString()
 
@@ -70,7 +70,7 @@ class RequestInitializeHandler(
         headers["osVersion"] = metaData.operatingSystemVersion
         headers["appVersion"] = metaData.applicationVersion
         headers["length"] = metaData.length.toString()
-        headers["modality"] = metaData.modality.toString()
+        headers["modality"] = metaData.modality
         headers["formatVersion"] = metaData.formatVersion.toString()
         headers["logCount"] = metaData.logCount
         headers["imageCount"] = metaData.imageCount
