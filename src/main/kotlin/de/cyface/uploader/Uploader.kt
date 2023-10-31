@@ -28,7 +28,7 @@ import java.net.URL
  * Interface for uploading files to a Cyface Data Collector.
  *
  * @author Armin Schnabel
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 interface Uploader {
@@ -39,6 +39,7 @@ interface Uploader {
      * @param jwtToken A String in the format "eyXyz123***".
      * @param metaData The [RequestMetaData] required for the Multipart request.
      * @param file The data file to upload via this post request.
+     * @param endpoint The endpoint to upload the data to.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
      * @return [Result.UPLOAD_SUCCESSFUL] when successful and [Result.UPLOAD_SKIPPED] when the server is
@@ -50,13 +51,22 @@ interface Uploader {
         jwtToken: String,
         metaData: RequestMetaData,
         file: File,
+        endpoint: URL,
         progressListener: UploadProgressListener
     ): Result
 
     /**
-     * @return the endpoint which will be used for the upload.
+     * @return the endpoint which will be used to upload the core measurement file.
      * @throws MalformedURLException if the endpoint address provided is malformed.
      */
     @Throws(MalformedURLException::class)
     fun endpoint(): URL
+
+    /**
+     * @param measurementId The id of the measurement the files are captured for.
+     * @return the endpoint which will be used to upload the attached files of a measurement.
+     * @throws MalformedURLException if the endpoint address provided is malformed.
+     */
+    @Throws(MalformedURLException::class)
+    fun filesEndpoint(measurementId: Long): URL
 }

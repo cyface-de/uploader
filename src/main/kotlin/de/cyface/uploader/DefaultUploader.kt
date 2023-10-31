@@ -66,7 +66,7 @@ import javax.net.ssl.SSLException
  * To use this interface just call [DefaultUploader.upload] with an authentication token.
  *
  * @author Armin Schnabel
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  * @property apiEndpoint An API endpoint running a Cyface data collector service, like `https://some.url/api/v3`
  */
@@ -78,6 +78,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         jwtToken: String,
         metaData: RequestMetaData,
         file: File,
+        endpoint: URL,
         progressListener: UploadProgressListener
     ): Result {
         return try {
@@ -114,7 +115,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                 uploader.progressListener = ProgressHandler(progressListener)
 
                 // Upload
-                val requestUrl = GenericUrl(endpoint())
+                val requestUrl = GenericUrl(endpoint)
                 val response = uploader.upload(requestUrl)
                 try {
                     readResponse(response, jsonFactory)
@@ -199,6 +200,10 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
     override fun endpoint(): URL {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
+    }
+
+    override fun filesEndpoint(measurementId: Long): URL {
+        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$measurementId/files")
     }
 
     @Throws(
