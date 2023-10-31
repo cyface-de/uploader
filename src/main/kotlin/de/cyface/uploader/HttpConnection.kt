@@ -19,32 +19,13 @@
 package de.cyface.uploader
 
 import de.cyface.uploader.DefaultUploader.Companion.DEFAULT_CHARSET
-import de.cyface.uploader.exception.AccountNotActivated
-import de.cyface.uploader.exception.BadRequestException
-import de.cyface.uploader.exception.ConflictException
-import de.cyface.uploader.exception.EntityNotParsableException
-import de.cyface.uploader.exception.ForbiddenException
-import de.cyface.uploader.exception.HostUnresolvable
-import de.cyface.uploader.exception.InternalServerErrorException
-import de.cyface.uploader.exception.NetworkUnavailableException
-import de.cyface.uploader.exception.ServerUnavailableException
 import de.cyface.uploader.exception.SynchronisationException
-import de.cyface.uploader.exception.TooManyRequestsException
-import de.cyface.uploader.exception.UnauthorizedException
-import de.cyface.uploader.exception.UnexpectedResponseCode
-import de.cyface.uploader.exception.UploadSessionExpired
-import org.slf4j.LoggerFactory
-import java.io.BufferedOutputStream
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InterruptedIOException
 import java.net.HttpURLConnection
 import java.net.ProtocolException
 import java.net.URL
-import java.util.zip.GZIPOutputStream
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
-import javax.net.ssl.SSLException
 import javax.net.ssl.SSLSession
 
 /**

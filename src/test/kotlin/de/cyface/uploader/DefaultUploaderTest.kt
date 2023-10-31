@@ -53,7 +53,11 @@ class DefaultUploaderTest {
             startLocation,
             endLocation,
             Modality.BICYCLE.databaseIdentifier,
-            3
+            3,
+            0,
+            0,
+            0,
+            0
         )
 
         // Act
@@ -76,6 +80,10 @@ class DefaultUploaderTest {
         expected["locationCount"] = "5"
         expected["modality"] = "BICYCLE"
         expected["formatVersion"] = "3"
+        expected["logCount"] = "0"
+        expected["imageCount"] = "0"
+        expected["videoCount"] = "0"
+        expected["filesSize"] = "0"
         assertThat(result, equalTo(expected))
     }
 }
