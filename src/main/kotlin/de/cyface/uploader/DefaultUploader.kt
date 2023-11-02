@@ -374,15 +374,15 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             val attributes: MutableMap<String, String> = HashMap()
 
             // Location meta data
-            if (metaData.startLocation != null) {
-                attributes["startLocLat"] = metaData.startLocation!!.latitude.toString()
-                attributes["startLocLon"] = metaData.startLocation!!.longitude.toString()
-                attributes["startLocTS"] = metaData.startLocation!!.timestamp.toString()
+            metaData.startLocation?.let { startLocation ->
+                attributes["startLocLat"] = startLocation.latitude.toString()
+                attributes["startLocLon"] = startLocation.longitude.toString()
+                attributes["startLocTS"] = startLocation.timestamp.toString()
             }
-            if (metaData.endLocation != null) {
-                attributes["endLocLat"] = metaData.endLocation!!.latitude.toString()
-                attributes["endLocLon"] = metaData.endLocation!!.longitude.toString()
-                attributes["endLocTS"] = metaData.endLocation!!.timestamp.toString()
+            metaData.endLocation?.let { endLocation ->
+                attributes["endLocLat"] = endLocation.latitude.toString()
+                attributes["endLocLon"] = endLocation.longitude.toString()
+                attributes["endLocTS"] = endLocation.timestamp.toString()
             }
             attributes["locationCount"] = metaData.locationCount.toString()
 
