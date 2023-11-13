@@ -28,16 +28,16 @@ import java.net.URL
  * Interface for uploading files to a Cyface Data Collector.
  *
  * @author Armin Schnabel
- * @version 1.0.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 interface Uploader {
 
     /**
-     * Uploads the provided file to the server available at the [endpoint].
+     * Uploads the provided measurement file to the server.
      *
      * @param jwtToken A String in the format "eyXyz123***".
-     * @param metaData The [RequestMetaData] required for the Multipart request.
+     * @param metaData The [RequestMetaData] required for the upload request.
      * @param file The data file to upload via this post request.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
@@ -45,8 +45,7 @@ interface Uploader {
      * not interested in the data.
      */
     @Throws(UploadFailed::class)
-    @Suppress("unused") // Part of the API
-    fun upload(
+    fun uploadMeasurement(
         jwtToken: String,
         metaData: RequestMetaData,
         file: File,
@@ -54,9 +53,40 @@ interface Uploader {
     ): Result
 
     /**
-     * @return the endpoint which will be used for the upload.
-     * @throws MalformedURLException if the endpoint address provided is malformed.
+     * Uploads the provided attachment file to the server, associated with a specific measurement.
+     *
+     * @param jwtToken A String in the format "eyXyz123***".
+     * @param metaData The [RequestMetaData] required for the upload request.
+     * @param measurementId The id of the measurement the file is attached to.
+     * @param file The attachment file to upload via this post request.
+     * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
+     * @throws UploadFailed when an error occurred.
+     * @return [Result.UPLOAD_SUCCESSFUL] when successful and [Result.UPLOAD_SKIPPED] when the server is
+     * not interested in the data.
+     */
+    @Throws(UploadFailed::class)
+    fun uploadAttachment(
+        jwtToken: String,
+        metaData: RequestMetaData,
+        measurementId: Long,
+        file: File,
+        progressListener: UploadProgressListener
+    ): Result
+
+    /**
+     * @return The URL endpoint used for uploading measurement files.
+     * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun endpoint(): URL
+    fun measurementsEndpoint(): URL
+
+    /**
+     * Determines the URL endpoint for uploading attachment files associated with a specific measurement.
+     *
+     * @param measurementId The ID of the measurement the files are attached to.
+     * @return The URL endpoint used for uploading attachment files.
+     * @throws MalformedURLException if the endpoint address is malformed.
+     */
+    @Throws(MalformedURLException::class)
+    fun attachmentsEndpoint(measurementId: Long): URL
 }
