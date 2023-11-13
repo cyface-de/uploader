@@ -90,7 +90,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         file: File,
         progressListener: UploadProgressListener
     ): Result {
-        val endpoint = filesEndpoint(measurementId)
+        val endpoint = attachmentsEndpoint(measurementId)
         return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
     }
 
@@ -98,8 +98,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
-    override fun filesEndpoint(measurementId: Long): URL {
-        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$measurementId/files")
+    override fun attachmentsEndpoint(measurementId: Long): URL {
+        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$measurementId/attachments")
     }
 
     @Throws(UploadFailed::class)

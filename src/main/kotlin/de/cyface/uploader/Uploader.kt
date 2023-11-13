@@ -88,5 +88,5 @@ interface Uploader {
      * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun filesEndpoint(measurementId: Long): URL
+    fun attachmentsEndpoint(measurementId: Long): URL
 }
