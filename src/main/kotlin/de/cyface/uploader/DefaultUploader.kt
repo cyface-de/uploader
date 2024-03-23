@@ -88,6 +88,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         metaData: RequestMetaData,
         measurementId: Long,
         file: File,
+        fileName: String,
         progressListener: UploadProgressListener
     ): Result {
         val endpoint = attachmentsEndpoint(measurementId)
