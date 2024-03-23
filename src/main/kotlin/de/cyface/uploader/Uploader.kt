@@ -59,6 +59,7 @@ interface Uploader {
      * @param metaData The [RequestMetaData] required for the upload request.
      * @param measurementId The id of the measurement the file is attached to.
      * @param file The attachment file to upload via this post request.
+     * @param fileName How the transfer file should be named when uploading.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
      * @return [Result.UPLOAD_SUCCESSFUL] when successful and [Result.UPLOAD_SKIPPED] when the server is
@@ -70,6 +71,7 @@ interface Uploader {
         metaData: RequestMetaData,
         measurementId: Long,
         file: File,
+        fileName: String,
         progressListener: UploadProgressListener
     ): Result
 
