@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023 Cyface GmbH
+ * Copyright (C) 2019-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -24,8 +24,7 @@ import java.net.URL
  * The build gradle file for the Cyface Uploader.
  *
  * @author Armin Schnabel
- * @version 1.0.1
- * @since 1.0.0
+ * @author Klemens Muthmann
  */
 buildscript {
   repositories {
@@ -101,7 +100,7 @@ tasks.test {
 
 dependencies {
   // Internal Cyface Dependencies
-  implementation("de.cyface:serializer:${project.extra["cyfaceSerializationVersion"]}")
+  api("de.cyface:serializer:${project.extra["cyfaceSerializationVersion"]}")
   implementation("com.google.api-client:google-api-client:${project.extra["googleApiClientVersion"]}")
 
   // Kotlin Support
