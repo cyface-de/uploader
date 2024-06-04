@@ -55,7 +55,6 @@ interface Uploader {
      *
      * @param jwtToken A String in the format "eyXyz123***".
      * @param metaData The [RequestMetaData] required for the upload request.
-     * @param measurementId The id of the measurement the file is attached to.
      * @param file The attachment file to upload via this post request.
      * @param fileName How the transfer file should be named when uploading.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
@@ -67,7 +66,6 @@ interface Uploader {
     fun uploadAttachment(
         jwtToken: String,
         metaData: RequestMetaData,
-        measurementId: Long,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,
@@ -83,10 +81,11 @@ interface Uploader {
     /**
      * Determines the URL endpoint for uploading attachment files associated with a specific measurement.
      *
+     * @param deviceId The ID of the device the measurement is attached to.
      * @param measurementId The ID of the measurement the files are attached to.
      * @return The URL endpoint used for uploading attachment files.
      * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun attachmentsEndpoint(measurementId: Long): URL
+    fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL
 }

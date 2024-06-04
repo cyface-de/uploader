@@ -84,12 +84,13 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     override fun uploadAttachment(
         jwtToken: String,
         metaData: RequestMetaData,
-        measurementId: Long,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,
     ): Result {
-        val endpoint = attachmentsEndpoint(measurementId)
+        val measurementId = metaData.measurementIdentifier.toLong()
+        val deviceId = metaData.deviceIdentifier
+        val endpoint = attachmentsEndpoint(deviceId, measurementId)
         return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
     }
 
@@ -97,8 +98,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
-    override fun attachmentsEndpoint(measurementId: Long): URL {
-        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$measurementId/attachments")
+    override fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL {
+        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$deviceId/$measurementId/attachments")
     }
 
     @Throws(UploadFailed::class)
