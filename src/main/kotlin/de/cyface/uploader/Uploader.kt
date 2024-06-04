@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Cyface GmbH
+ * Copyright 2023-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -28,8 +28,6 @@ import java.net.URL
  * Interface for uploading files to a Cyface Data Collector.
  *
  * @author Armin Schnabel
- * @version 2.0.0
- * @since 1.0.0
  */
 interface Uploader {
 
@@ -72,7 +70,7 @@ interface Uploader {
         measurementId: Long,
         file: File,
         fileName: String,
-        progressListener: UploadProgressListener
+        progressListener: UploadProgressListener,
     ): Result
 
     /**

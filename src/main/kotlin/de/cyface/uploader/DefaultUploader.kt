@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Cyface GmbH
+ * Copyright 2023-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -66,8 +66,6 @@ import javax.net.ssl.SSLException
  * To use this interface just call [DefaultUploader.uploadMeasurement] or [DefaultUploader.uploadAttachment].
  *
  * @author Armin Schnabel
- * @version 2.0.0
- * @since 1.0.0
  * @property apiEndpoint An API endpoint running a Cyface data collector service, like `https://some.url/api/v3`
  */
 class DefaultUploader(private val apiEndpoint: String) : Uploader {
@@ -89,7 +87,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         measurementId: Long,
         file: File,
         fileName: String,
-        progressListener: UploadProgressListener
+        progressListener: UploadProgressListener,
     ): Result {
         val endpoint = attachmentsEndpoint(measurementId)
         return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
@@ -129,6 +127,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                 val preRequestBody = preRequestBody(metaData)
                 uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
 
+                // Vert.X currently only supports compressing "down-stream" out of the box
                 // Vert.X currently only supports compressing "down-stream" out of the box
                 uploader.disableGZipContent = true
 
@@ -426,6 +425,15 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             }
             attributes["locationCount"] = metaData.locationCount.toString()
 
+            // Attachment meta data
+            if (metaData.attachmentIdentifier != null) {
+                attributes["attachmentId"] = metaData.attachmentIdentifier.toString()
+            }
+            attributes["logCount"] = metaData.logCount.toString()
+            attributes["imageCount"] = metaData.imageCount.toString()
+            attributes["videoCount"] = metaData.videoCount.toString()
+            attributes["filesSize"] = metaData.filesSize.toString()
+
             // Remaining meta data
             attributes["deviceId"] = metaData.deviceIdentifier
             attributes["measurementId"] = metaData.measurementIdentifier
@@ -435,10 +443,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             attributes["length"] = metaData.length.toString()
             attributes["modality"] = metaData.modality
             attributes["formatVersion"] = metaData.formatVersion.toString()
-            attributes["logCount"] = metaData.logCount.toString()
-            attributes["imageCount"] = metaData.imageCount.toString()
-            attributes["videoCount"] = metaData.videoCount.toString()
-            attributes["filesSize"] = metaData.filesSize.toString()
             return attributes
         }
 
