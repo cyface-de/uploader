@@ -73,7 +73,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     @Suppress("unused", "CyclomaticComplexMethod", "LongMethod") // Part of the API
     override fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<RequestMetaData.MeasurementIdentifier>,
         file: File,
         progressListener: UploadProgressListener
     ): Result {
@@ -83,13 +83,13 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
     override fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<RequestMetaData.AttachmentIdentifier>,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,
     ): Result {
-        val measurementId = metaData.measurementIdentifier.toLong()
-        val deviceId = metaData.deviceIdentifier
+        val measurementId = metaData.identifier.measurementId.toLong()
+        val deviceId = metaData.identifier.deviceId
         val endpoint = attachmentsEndpoint(deviceId, measurementId)
         return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
     }
@@ -103,9 +103,9 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     }
 
     @Throws(UploadFailed::class)
-    private fun uploadFile(
+    private fun <T : RequestMetaData.MeasurementIdentifier> uploadFile(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<T>,
         file: File,
         endpoint: URL,
         progressListener: UploadProgressListener
@@ -129,7 +129,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                 uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
 
                 // Vert.X currently only supports compressing "down-stream" out of the box
-                // Vert.X currently only supports compressing "down-stream" out of the box
                 uploader.disableGZipContent = true
 
                 // Progress
@@ -149,9 +148,9 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         }
     }
 
-    private fun initializeUploader(
+    private fun <T : RequestMetaData.MeasurementIdentifier> initializeUploader(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<T>,
         fileInputStream: FileInputStream,
         file: File
     ): MediaHttpUploader {
@@ -212,6 +211,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
                 // InterruptedIOException while reading the response. Try again later.
                 throw UploadFailed(SynchronisationException(exception))
             }
+
             is IOException -> handleIOException(exception)
             // File is too large to be uploaded. Handle in caller (e.g. skip the upload).
             // The max size is currently static and set to 100 MB which should be about 44 hours of 100 Hz measurement.
@@ -310,14 +310,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         }
     }
 
-    internal class ProgressHandler(progressListener: UploadProgressListener) :
+    internal class ProgressHandler(private val progressListener: UploadProgressListener) :
         MediaHttpUploaderProgressListener {
-
-        private val progressListener: UploadProgressListener
-
-        init {
-            this.progressListener = progressListener
-        }
 
         @Throws(IOException::class)
         override fun progressChanged(uploader: MediaHttpUploader) {
@@ -410,40 +404,44 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
          * @param metaData The metadata to convert.
          * @return The meta data as `HttpContent`.
          */
-        fun preRequestBody(metaData: RequestMetaData): Map<String, String> {
+        fun <T : RequestMetaData.MeasurementIdentifier> preRequestBody(metaData: RequestMetaData<T>):
+                Map<String, String> {
             val attributes: MutableMap<String, String> = HashMap()
 
             // Location meta data
-            metaData.startLocation?.let { startLocation ->
+            metaData.measurementMetaData.startLocation?.let { startLocation ->
                 attributes["startLocLat"] = startLocation.latitude.toString()
                 attributes["startLocLon"] = startLocation.longitude.toString()
                 attributes["startLocTS"] = startLocation.timestamp.toString()
             }
-            metaData.endLocation?.let { endLocation ->
+            metaData.measurementMetaData.endLocation?.let { endLocation ->
                 attributes["endLocLat"] = endLocation.latitude.toString()
                 attributes["endLocLon"] = endLocation.longitude.toString()
                 attributes["endLocTS"] = endLocation.timestamp.toString()
             }
-            attributes["locationCount"] = metaData.locationCount.toString()
+            attributes["locationCount"] = metaData.measurementMetaData.locationCount.toString()
 
             // Attachment meta data
-            if (metaData.attachmentIdentifier != null) {
-                attributes["attachmentId"] = metaData.attachmentIdentifier.toString()
+            when (metaData.identifier) {
+                is RequestMetaData.AttachmentIdentifier -> {
+                    val identifier = metaData.identifier as RequestMetaData.AttachmentIdentifier
+                    attributes["attachmentId"] = identifier.attachmentId
+                }
             }
-            attributes["logCount"] = metaData.logCount.toString()
-            attributes["imageCount"] = metaData.imageCount.toString()
-            attributes["videoCount"] = metaData.videoCount.toString()
-            attributes["filesSize"] = metaData.filesSize.toString()
+            attributes["logCount"] = metaData.attachmentMetaData.logCount.toString()
+            attributes["imageCount"] = metaData.attachmentMetaData.imageCount.toString()
+            attributes["videoCount"] = metaData.attachmentMetaData.videoCount.toString()
+            attributes["filesSize"] = metaData.attachmentMetaData.filesSize.toString()
 
             // Remaining meta data
-            attributes["deviceId"] = metaData.deviceIdentifier
-            attributes["measurementId"] = metaData.measurementIdentifier
-            attributes["deviceType"] = metaData.deviceType
-            attributes["osVersion"] = metaData.operatingSystemVersion
-            attributes["appVersion"] = metaData.applicationVersion
-            attributes["length"] = metaData.length.toString()
-            attributes["modality"] = metaData.modality
-            attributes["formatVersion"] = metaData.formatVersion.toString()
+            attributes["deviceId"] = metaData.identifier.deviceId
+            attributes["measurementId"] = metaData.identifier.measurementId
+            attributes["deviceType"] = metaData.deviceMetaData.deviceType
+            attributes["osVersion"] = metaData.deviceMetaData.operatingSystemVersion
+            attributes["appVersion"] = metaData.applicationMetaData.applicationVersion
+            attributes["length"] = metaData.measurementMetaData.length.toString()
+            attributes["modality"] = metaData.measurementMetaData.modality
+            attributes["formatVersion"] = metaData.applicationMetaData.formatVersion.toString()
             return attributes
         }
 
