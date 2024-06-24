@@ -45,7 +45,7 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<RequestMetaData.MeasurementIdentifier>,
         file: File,
         progressListener: UploadProgressListener
     ): Result
@@ -65,7 +65,7 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData,
+        metaData: RequestMetaData<RequestMetaData.AttachmentIdentifier>,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,

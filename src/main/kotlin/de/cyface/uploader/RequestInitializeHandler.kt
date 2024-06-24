@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Cyface GmbH
+ * Copyright 2021-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -28,13 +28,11 @@ import java.io.IOException
  * Assembles a request as requested to upload data.
  *
  * @author Armin Schnabel
- * @version 1.0.0
- * @since 7.0.0
  * @property metaData the `MetaData` used to request the upload permission from the server
  * @property jwtBearer the JWT token to authenticate the upload requests
  */
-class RequestInitializeHandler(
-    private val metaData: RequestMetaData,
+class RequestInitializeHandler<T : RequestMetaData.MeasurementIdentifier>(
+    private val metaData: RequestMetaData<T>,
     private val jwtBearer: String
 ) : HttpRequestInitializer {
     @Throws(IOException::class)
@@ -49,32 +47,35 @@ class RequestInitializeHandler(
         request.headers = headers
     }
 
-    private fun addMetaData(metaData: RequestMetaData, headers: HttpHeaders) {
+    private fun <T : RequestMetaData.MeasurementIdentifier> addMetaData(
+        metaData: RequestMetaData<T>,
+        headers: HttpHeaders
+    ) {
         // Location meta data
-        metaData.startLocation?.let { startLocation ->
+        metaData.measurementMetaData.startLocation?.let { startLocation ->
             headers["startLocLat"] = startLocation.latitude.toString()
             headers["startLocLon"] = startLocation.longitude.toString()
             headers["startLocTS"] = startLocation.timestamp.toString()
         }
-        metaData.endLocation?.let { endLocation ->
+        metaData.measurementMetaData.endLocation?.let { endLocation ->
             headers["endLocLat"] = endLocation.latitude.toString()
             headers["endLocLon"] = endLocation.longitude.toString()
             headers["endLocTS"] = endLocation.timestamp.toString()
         }
-        headers["locationCount"] = metaData.locationCount.toString()
+        headers["locationCount"] = metaData.measurementMetaData.locationCount.toString()
 
         // Remaining meta data
-        headers["deviceId"] = metaData.deviceIdentifier
-        headers["measurementId"] = java.lang.Long.valueOf(metaData.measurementIdentifier).toString()
-        headers["deviceType"] = metaData.deviceType
-        headers["osVersion"] = metaData.operatingSystemVersion
-        headers["appVersion"] = metaData.applicationVersion
-        headers["length"] = metaData.length.toString()
-        headers["modality"] = metaData.modality
-        headers["formatVersion"] = metaData.formatVersion.toString()
-        headers["logCount"] = metaData.logCount
-        headers["imageCount"] = metaData.imageCount
-        headers["videoCount"] = metaData.videoCount
-        headers["filesSize"] = metaData.filesSize
+        headers["deviceId"] = metaData.identifier.deviceId
+        headers["measurementId"] = java.lang.Long.valueOf(metaData.identifier.measurementId).toString()
+        headers["deviceType"] = metaData.deviceMetaData.deviceType
+        headers["osVersion"] = metaData.deviceMetaData.operatingSystemVersion
+        headers["appVersion"] = metaData.applicationMetaData.applicationVersion
+        headers["length"] = metaData.measurementMetaData.length.toString()
+        headers["modality"] = metaData.measurementMetaData.modality
+        headers["formatVersion"] = metaData.applicationMetaData.formatVersion.toString()
+        headers["logCount"] = metaData.attachmentMetaData.logCount
+        headers["imageCount"] = metaData.attachmentMetaData.imageCount
+        headers["videoCount"] = metaData.attachmentMetaData.videoCount
+        headers["filesSize"] = metaData.attachmentMetaData.filesSize
     }
 }

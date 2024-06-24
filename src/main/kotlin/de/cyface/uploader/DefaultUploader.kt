@@ -405,7 +405,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
          * @return The meta data as `HttpContent`.
          */
         fun <T : RequestMetaData.MeasurementIdentifier> preRequestBody(metaData: RequestMetaData<T>):
-                Map<String, String> {
+            Map<String, String> {
             val attributes: MutableMap<String, String> = HashMap()
 
             // Location meta data

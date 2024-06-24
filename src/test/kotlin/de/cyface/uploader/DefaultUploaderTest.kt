@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 Cyface GmbH
+ * Copyright 2018-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -20,7 +20,6 @@ package de.cyface.uploader
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import de.cyface.model.MeasurementIdentifier
 import de.cyface.model.Modality
 import de.cyface.model.RequestMetaData
 import org.junit.jupiter.api.Test
@@ -29,8 +28,6 @@ import org.junit.jupiter.api.Test
  * Tests whether our default implementation of the HTTP protocol works as expected.
  *
  * @author Armin Schnabel
- * @version 2.1.0
- * @since 1.0.0
  */
 class DefaultUploaderTest {
     /**
@@ -39,25 +36,35 @@ class DefaultUploaderTest {
     @Test
     fun testPreRequestBody() {
         val deviceId = "testDevi-ce00-42b6-a840-1b70d30094b8" // Must be a valid UUID
-        val id = MeasurementIdentifier(deviceId, 78)
-        val startLocation = RequestMetaData.GeoLocation(1000000000L, 51.1, 13.1)
-        val endLocation = RequestMetaData.GeoLocation(1000010000L, 51.2, 13.2)
+        val measurementId = 78
+        val startLocation = RequestMetaData.MeasurementMetaData.GeoLocation(1000000000L, 51.1, 13.1)
+        val endLocation = RequestMetaData.MeasurementMetaData.GeoLocation(1000010000L, 51.2, 13.2)
         val metaData = RequestMetaData(
-            id.deviceIdentifier,
-            id.measurementIdentifier.toString(),
-            "test_osVersion",
-            "test_deviceType",
-            "test_appVersion",
-            10.0,
-            5,
-            startLocation,
-            endLocation,
-            Modality.BICYCLE.databaseIdentifier,
-            3,
-            0,
-            0,
-            0,
-            0
+            RequestMetaData.MeasurementIdentifier(
+                deviceId,
+                measurementId.toString(),
+            ),
+            RequestMetaData.DeviceMetaData(
+                "test_osVersion",
+                "test_deviceType",
+            ),
+            RequestMetaData.ApplicationMetaData(
+                "test_appVersion",
+                3,
+            ),
+            RequestMetaData.MeasurementMetaData(
+                10.0,
+                5,
+                startLocation,
+                endLocation,
+                Modality.BICYCLE.databaseIdentifier,
+            ),
+            RequestMetaData.AttachmentMetaData(
+                0,
+                0,
+                0,
+                0,
+            ),
         )
 
         // Act
