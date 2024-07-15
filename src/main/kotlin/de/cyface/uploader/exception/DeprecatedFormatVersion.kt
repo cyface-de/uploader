@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 Cyface GmbH
+ * Copyright 2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -19,25 +19,9 @@
 package de.cyface.uploader.exception
 
 /**
- * An `Exception` thrown when the synchronization is interrupted.
+ * Exception thrown when the client tries to upload a file in a formatVersion older than the current version.
  *
  * @author Armin Schnabel
+ * @param message Details about the reason for this exception.
  */
-class SynchronizationInterruptedException : Exception {
-    /**
-     * @param exception The `Exception` that caused this one.
-     */
-    constructor(exception: Exception) : super(exception)
-
-    /**
-     * @param detailedMessage A more detailed message explaining the context for this `Exception`.
-     */
-    @Suppress("unused") // Part of the API
-    constructor(detailedMessage: String) : super(detailedMessage)
-
-    /**
-     * @param detailedMessage A more detailed message explaining the context for this `Exception`.
-     * @param cause The `Exception` that caused this one.
-     */
-    constructor(detailedMessage: String, cause: Exception) : super(detailedMessage, cause)
-}
+class DeprecatedFormatVersion(message: String) : Exception(message)

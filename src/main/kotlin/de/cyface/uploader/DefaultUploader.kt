@@ -27,7 +27,6 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.http.json.JsonHttpContent
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
-import de.cyface.model.RequestMetaData
 import de.cyface.uploader.exception.AccountNotActivated
 import de.cyface.uploader.exception.BadRequestException
 import de.cyface.uploader.exception.ConflictException
@@ -44,6 +43,9 @@ import de.cyface.uploader.exception.UnauthorizedException
 import de.cyface.uploader.exception.UnexpectedResponseCode
 import de.cyface.uploader.exception.UploadFailed
 import de.cyface.uploader.exception.UploadSessionExpired
+import de.cyface.uploader.model.Attachment
+import de.cyface.uploader.model.Measurement
+import de.cyface.uploader.model.Uploadable
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.BufferedReader
@@ -73,25 +75,25 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     @Suppress("unused", "CyclomaticComplexMethod", "LongMethod") // Part of the API
     override fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData<RequestMetaData.MeasurementIdentifier>,
+        uploadable: Measurement,
         file: File,
         progressListener: UploadProgressListener
     ): Result {
         val endpoint = measurementsEndpoint()
-        return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
+        return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
     override fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData<RequestMetaData.AttachmentIdentifier>,
+        uploadable: Attachment,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,
     ): Result {
-        val measurementId = metaData.identifier.measurementId.toLong()
-        val deviceId = metaData.identifier.deviceId
+        val measurementId = uploadable.identifier.measurementIdentifier
+        val deviceId = uploadable.identifier.deviceIdentifier.toString()
         val endpoint = attachmentsEndpoint(deviceId, measurementId)
-        return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
+        return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
     override fun measurementsEndpoint(): URL {
@@ -103,16 +105,16 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     }
 
     @Throws(UploadFailed::class)
-    private fun <T : RequestMetaData.MeasurementIdentifier> uploadFile(
+    private fun uploadFile(
         jwtToken: String,
-        metaData: RequestMetaData<T>,
+        uploadable: Uploadable,
         file: File,
         endpoint: URL,
         progressListener: UploadProgressListener
     ): Result {
         return try {
             FileInputStream(file).use { fis ->
-                val uploader = initializeUploader(jwtToken, metaData, fis, file)
+                val uploader = initializeUploader(jwtToken, uploadable, fis, file)
 
                 // We currently cannot merge multiple upload-chunk requests into one file on server side.
                 // Thus, we prevent slicing the file into multiple files by increasing the chunk size.
@@ -125,8 +127,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
                 // Add meta data to PreRequest
                 val jsonFactory = GsonFactory()
-                val preRequestBody = preRequestBody(metaData)
-                uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
+                uploader.metadata = JsonHttpContent(jsonFactory, uploadable.toMap())
 
                 // Vert.X currently only supports compressing "down-stream" out of the box
                 uploader.disableGZipContent = true
@@ -148,9 +149,9 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         }
     }
 
-    private fun <T : RequestMetaData.MeasurementIdentifier> initializeUploader(
+    private fun initializeUploader(
         jwtToken: String,
-        metaData: RequestMetaData<T>,
+        uploadable: Uploadable,
         fileInputStream: FileInputStream,
         file: File
     ): MediaHttpUploader {
@@ -160,7 +161,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         LOGGER.debug("mediaContent.length: ${mediaContent.length}")
         val transport = NetHttpTransport() // Use Builder to modify behaviour
         val jwtBearer = "Bearer $jwtToken"
-        val httpRequestInitializer = RequestInitializeHandler(metaData, jwtBearer)
+        val httpRequestInitializer = RequestInitializeHandler(uploadable, jwtBearer)
         return MediaHttpUploader(mediaContent, transport, httpRequestInitializer)
     }
 
@@ -398,53 +399,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             }
         }
 
-        /**
-         * Assembles a `HttpContent` object which contains the metadata.
-         *
-         * @param metaData The metadata to convert.
-         * @return The meta data as `HttpContent`.
-         */
-        fun <T : RequestMetaData.MeasurementIdentifier> preRequestBody(metaData: RequestMetaData<T>):
-            Map<String, String> {
-            val attributes: MutableMap<String, String> = HashMap()
-
-            // Location meta data
-            metaData.measurementMetaData.startLocation?.let { startLocation ->
-                attributes["startLocLat"] = startLocation.latitude.toString()
-                attributes["startLocLon"] = startLocation.longitude.toString()
-                attributes["startLocTS"] = startLocation.timestamp.toString()
-            }
-            metaData.measurementMetaData.endLocation?.let { endLocation ->
-                attributes["endLocLat"] = endLocation.latitude.toString()
-                attributes["endLocLon"] = endLocation.longitude.toString()
-                attributes["endLocTS"] = endLocation.timestamp.toString()
-            }
-            attributes["locationCount"] = metaData.measurementMetaData.locationCount.toString()
-
-            // Attachment meta data
-            when (metaData.identifier) {
-                is RequestMetaData.AttachmentIdentifier -> {
-                    val identifier = metaData.identifier as RequestMetaData.AttachmentIdentifier
-                    attributes["attachmentId"] = identifier.attachmentId
-                }
-            }
-            attributes["logCount"] = metaData.attachmentMetaData.logCount.toString()
-            attributes["imageCount"] = metaData.attachmentMetaData.imageCount.toString()
-            attributes["videoCount"] = metaData.attachmentMetaData.videoCount.toString()
-            attributes["filesSize"] = metaData.attachmentMetaData.filesSize.toString()
-
-            // Remaining meta data
-            attributes["deviceId"] = metaData.identifier.deviceId
-            attributes["measurementId"] = metaData.identifier.measurementId
-            attributes["deviceType"] = metaData.deviceMetaData.deviceType
-            attributes["osVersion"] = metaData.deviceMetaData.operatingSystemVersion
-            attributes["appVersion"] = metaData.applicationMetaData.applicationVersion
-            attributes["length"] = metaData.measurementMetaData.length.toString()
-            attributes["modality"] = metaData.measurementMetaData.modality
-            attributes["formatVersion"] = metaData.applicationMetaData.formatVersion.toString()
-            return attributes
-        }
-
         @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         @JvmStatic
         fun handleSuccess(response: HttpResponse): Result {
@@ -550,24 +504,20 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
          * @return the [String] read from the InputStream. If an I/O error occurs while reading from the stream, the
          * already read string is returned which might my empty or cut short.
          */
-        @Suppress("MemberVisibilityCanBePrivate", "NestedBlockDepth") // Part of the API
+        @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         @JvmStatic
         fun readInputStream(inputStream: InputStream): String {
-            try {
-                try {
-                    BufferedReader(
-                        InputStreamReader(inputStream, DEFAULT_CHARSET)
-                    ).use { bufferedReader ->
-                        val responseString = StringBuilder()
-                        var line: String?
-                        while (bufferedReader.readLine().also { line = it } != null) {
-                            responseString.append(line)
-                        }
-                        return responseString.toString()
+            return try {
+                BufferedReader(InputStreamReader(inputStream, DEFAULT_CHARSET)).use { bufferedReader ->
+                    val responseString = StringBuilder()
+                    var line: String?
+                    while (bufferedReader.readLine().also { line = it } != null) {
+                        responseString.append(line)
                     }
-                } catch (e: UnsupportedEncodingException) {
-                    error(e)
+                    responseString.toString()
                 }
+            } catch (e: UnsupportedEncodingException) {
+                error(e)
             } catch (e: IOException) {
                 error(e)
             }

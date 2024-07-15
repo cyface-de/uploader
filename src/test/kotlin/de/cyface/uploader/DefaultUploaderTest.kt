@@ -68,7 +68,7 @@ class DefaultUploaderTest {
         )
 
         // Act
-        val result: Map<String, String> = DefaultUploader.preRequestBody(metaData)
+        val result: Map<String, String> = metaData.toMap()
 
         // Assert
         val expected: MutableMap<String, String> = HashMap()

@@ -18,8 +18,10 @@
  */
 package de.cyface.uploader
 
-import de.cyface.model.RequestMetaData
 import de.cyface.uploader.exception.UploadFailed
+import de.cyface.uploader.model.Attachment
+import de.cyface.uploader.model.Measurement
+import de.cyface.uploader.model.Uploadable
 import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
@@ -35,7 +37,7 @@ interface Uploader {
      * Uploads the provided measurement file to the server.
      *
      * @param jwtToken A String in the format "eyXyz123***".
-     * @param metaData The [RequestMetaData] required for the upload request.
+     * @param uploadable The [Uploadable] describing the data to upload.
      * @param file The data file to upload via this post request.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
@@ -45,7 +47,7 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData<RequestMetaData.MeasurementIdentifier>,
+        uploadable: Measurement,
         file: File,
         progressListener: UploadProgressListener
     ): Result
@@ -54,7 +56,7 @@ interface Uploader {
      * Uploads the provided attachment file to the server, associated with a specific measurement.
      *
      * @param jwtToken A String in the format "eyXyz123***".
-     * @param metaData The [RequestMetaData] required for the upload request.
+     * @param uploadable The [Uploadable] describing the data to upload.
      * @param file The attachment file to upload via this post request.
      * @param fileName How the transfer file should be named when uploading.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
@@ -65,7 +67,7 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData<RequestMetaData.AttachmentIdentifier>,
+        uploadable: Attachment,
         file: File,
         fileName: String,
         progressListener: UploadProgressListener,

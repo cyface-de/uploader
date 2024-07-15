@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Cyface GmbH
+ * Copyright 2023-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -22,8 +22,6 @@ package de.cyface.uploader.exception
  * An `Exception` thrown when there is an expected error with the upload request so the UI can handle this.
  *
  * @author Armin Schnabel
- * @version 1.0.0
- * @since 7.7.0
  */
 class UploadFailed : Exception {
     /**
