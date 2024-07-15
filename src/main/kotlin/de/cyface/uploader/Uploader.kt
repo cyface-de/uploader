@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Cyface GmbH
+ * Copyright 2023-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -18,8 +18,10 @@
  */
 package de.cyface.uploader
 
-import de.cyface.model.RequestMetaData
 import de.cyface.uploader.exception.UploadFailed
+import de.cyface.uploader.model.Attachment
+import de.cyface.uploader.model.Measurement
+import de.cyface.uploader.model.Uploadable
 import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
@@ -28,8 +30,6 @@ import java.net.URL
  * Interface for uploading files to a Cyface Data Collector.
  *
  * @author Armin Schnabel
- * @version 2.0.0
- * @since 1.0.0
  */
 interface Uploader {
 
@@ -37,7 +37,7 @@ interface Uploader {
      * Uploads the provided measurement file to the server.
      *
      * @param jwtToken A String in the format "eyXyz123***".
-     * @param metaData The [RequestMetaData] required for the upload request.
+     * @param uploadable The [Uploadable] describing the data to upload.
      * @param file The data file to upload via this post request.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
      * @throws UploadFailed when an error occurred.
@@ -47,7 +47,7 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData,
+        uploadable: Measurement,
         file: File,
         progressListener: UploadProgressListener
     ): Result
@@ -56,8 +56,7 @@ interface Uploader {
      * Uploads the provided attachment file to the server, associated with a specific measurement.
      *
      * @param jwtToken A String in the format "eyXyz123***".
-     * @param metaData The [RequestMetaData] required for the upload request.
-     * @param measurementId The id of the measurement the file is attached to.
+     * @param uploadable The [Uploadable] describing the data to upload.
      * @param file The attachment file to upload via this post request.
      * @param fileName How the transfer file should be named when uploading.
      * @param progressListener The [UploadProgressListener] to be informed about the upload progress.
@@ -68,11 +67,10 @@ interface Uploader {
     @Throws(UploadFailed::class)
     fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData,
-        measurementId: Long,
+        uploadable: Attachment,
         file: File,
         fileName: String,
-        progressListener: UploadProgressListener
+        progressListener: UploadProgressListener,
     ): Result
 
     /**
@@ -85,10 +83,11 @@ interface Uploader {
     /**
      * Determines the URL endpoint for uploading attachment files associated with a specific measurement.
      *
+     * @param deviceId The ID of the device the measurement is attached to.
      * @param measurementId The ID of the measurement the files are attached to.
      * @return The URL endpoint used for uploading attachment files.
      * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun attachmentsEndpoint(measurementId: Long): URL
+    fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL
 }

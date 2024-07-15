@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Cyface GmbH
+ * Copyright 2021-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -23,8 +23,6 @@ package de.cyface.uploader.exception
  * via a message or another wrapped `Exception`.
  *
  * @author Klemens Muthmann
- * @version 1.1.4
- * @since 1.0.0
  */
 class SynchronisationException : Exception {
     /**

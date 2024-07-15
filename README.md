@@ -125,11 +125,16 @@ val startLocation = GeoLocation(1637744753012L, 51.1, 13.1)
 val endLocation = GeoLocation(1637744993000, 51.2, 13.2)
 val modality = "BICYCLE"
 val formatVersion = RequestMetaData.CURRENT_TRANSFER_FILE_FORMAT_VERSION
+val logCount = 0
+val imageCount = 0
+val videoCount = 0
+val filesSize = 0L
 val metaData = RequestMetaData(
     deviceId, measurementId,
     osVersion, deviceType, appVersion, length,
     locationCount, startLocation, endLocation,
-    modality, formatVersion
+    modality, formatVersion,
+    logCount, imageCount, videoCount, filesSize
 )
 
 // Replace with a Cyface Binary or another file when using a custom Collector

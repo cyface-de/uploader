@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Cyface GmbH
+ * Copyright 2023-2024 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -27,7 +27,6 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.http.json.JsonHttpContent
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
-import de.cyface.model.RequestMetaData
 import de.cyface.uploader.exception.AccountNotActivated
 import de.cyface.uploader.exception.BadRequestException
 import de.cyface.uploader.exception.ConflictException
@@ -44,6 +43,9 @@ import de.cyface.uploader.exception.UnauthorizedException
 import de.cyface.uploader.exception.UnexpectedResponseCode
 import de.cyface.uploader.exception.UploadFailed
 import de.cyface.uploader.exception.UploadSessionExpired
+import de.cyface.uploader.model.Attachment
+import de.cyface.uploader.model.Measurement
+import de.cyface.uploader.model.Uploadable
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.BufferedReader
@@ -66,8 +68,6 @@ import javax.net.ssl.SSLException
  * To use this interface just call [DefaultUploader.uploadMeasurement] or [DefaultUploader.uploadAttachment].
  *
  * @author Armin Schnabel
- * @version 2.0.0
- * @since 1.0.0
  * @property apiEndpoint An API endpoint running a Cyface data collector service, like `https://some.url/api/v3`
  */
 class DefaultUploader(private val apiEndpoint: String) : Uploader {
@@ -75,45 +75,46 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
     @Suppress("unused", "CyclomaticComplexMethod", "LongMethod") // Part of the API
     override fun uploadMeasurement(
         jwtToken: String,
-        metaData: RequestMetaData,
+        uploadable: Measurement,
         file: File,
         progressListener: UploadProgressListener
     ): Result {
         val endpoint = measurementsEndpoint()
-        return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
+        return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
     override fun uploadAttachment(
         jwtToken: String,
-        metaData: RequestMetaData,
-        measurementId: Long,
+        uploadable: Attachment,
         file: File,
         fileName: String,
-        progressListener: UploadProgressListener
+        progressListener: UploadProgressListener,
     ): Result {
-        val endpoint = attachmentsEndpoint(measurementId)
-        return uploadFile(jwtToken, metaData, file, endpoint, progressListener)
+        val measurementId = uploadable.identifier.measurementIdentifier
+        val deviceId = uploadable.identifier.deviceIdentifier.toString()
+        val endpoint = attachmentsEndpoint(deviceId, measurementId)
+        return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
     override fun measurementsEndpoint(): URL {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
-    override fun attachmentsEndpoint(measurementId: Long): URL {
-        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$measurementId/attachments")
+    override fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL {
+        return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$deviceId/$measurementId/attachments")
     }
 
     @Throws(UploadFailed::class)
     private fun uploadFile(
         jwtToken: String,
-        metaData: RequestMetaData,
+        uploadable: Uploadable,
         file: File,
         endpoint: URL,
         progressListener: UploadProgressListener
     ): Result {
         return try {
             FileInputStream(file).use { fis ->
-                val uploader = initializeUploader(jwtToken, metaData, fis, file)
+                val uploader = initializeUploader(jwtToken, uploadable, fis, file)
 
                 // We currently cannot merge multiple upload-chunk requests into one file on server side.
                 // Thus, we prevent slicing the file into multiple files by increasing the chunk size.
@@ -126,8 +127,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
                 // Add meta data to PreRequest
                 val jsonFactory = GsonFactory()
-                val preRequestBody = preRequestBody(metaData)
-                uploader.metadata = JsonHttpContent(jsonFactory, preRequestBody)
+                uploader.metadata = JsonHttpContent(jsonFactory, uploadable.toMap())
 
                 // Vert.X currently only supports compressing "down-stream" out of the box
                 uploader.disableGZipContent = true
@@ -151,7 +151,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
     private fun initializeUploader(
         jwtToken: String,
-        metaData: RequestMetaData,
+        uploadable: Uploadable,
         fileInputStream: FileInputStream,
         file: File
     ): MediaHttpUploader {
@@ -161,7 +161,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         LOGGER.debug("mediaContent.length: ${mediaContent.length}")
         val transport = NetHttpTransport() // Use Builder to modify behaviour
         val jwtBearer = "Bearer $jwtToken"
-        val httpRequestInitializer = RequestInitializeHandler(metaData, jwtBearer)
+        val httpRequestInitializer = RequestInitializeHandler(uploadable, jwtBearer)
         return MediaHttpUploader(mediaContent, transport, httpRequestInitializer)
     }
 
@@ -171,78 +171,95 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
      * We wrap errors with [UploadFailed] so that the caller can handle this without crashing.
      * This way the SDK's `SyncPerformer` can determine if the sync should be repeated.
      */
-    @Suppress("ComplexMethod")
     private fun handleUploadException(exception: Exception): Nothing {
-        fun handleIOException(e: IOException): Nothing {
-            LOGGER.warn("Caught IOException: ${e.message}")
-            // Unstable Wi-Fi connection [DAT-742]. transmission stream ended too early, likely because the sync
-            // thread was interrupted (sync canceled). Try again later.
-            if (e.message?.contains("unexpected end of stream") == true) {
-                throw SynchronizationInterruptedException("Upload interrupted", e)
-            }
-            // IOException while reading the response. Try again later.
-            throw UploadFailed(SynchronisationException(e))
-        }
-
-        fun handleSSLException(e: SSLException): Nothing {
-            LOGGER.warn("Caught SSLException: ${e.message}")
-            // Thrown by OkHttp when the network is no longer available [DAT-740]. Try again later.
-            if (e.message?.contains("I/O error during system call, Broken pipe") == true) {
-                throw UploadFailed(NetworkUnavailableException("Network became unavailable during upload."))
-            }
-            throw UploadFailed(SynchronisationException(e))
-        }
-
         when (exception) {
             // Crash unexpected errors hard
             is MalformedURLException -> error(exception)
 
             // Soft caught errors
 
-            // Happened on emulator when endpoint is local network instead of 10.0.2.2 [DAT-727]
-            // Server not reachable. Try again later.
-            is SocketTimeoutException -> throw UploadFailed(ServerUnavailableException(exception))
-            is SSLException -> handleSSLException(exception)
-            is InterruptedIOException -> {
-                LOGGER.warn("Caught InterruptedIOException: ${exception.message}")
-                // Request interrupted [DAT-741]. Try again later.
-                if (exception.message?.contains("thread interrupted") == true) {
-                    throw UploadFailed(NetworkUnavailableException("Network interrupted during upload", exception))
-                }
-                // InterruptedIOException while reading the response. Try again later.
-                throw UploadFailed(SynchronisationException(exception))
-            }
-            is IOException -> handleIOException(exception)
             // File is too large to be uploaded. Handle in caller (e.g. skip the upload).
             // The max size is currently static and set to 100 MB which should be about 44 hours of 100 Hz measurement.
-            is MeasurementTooLarge -> throw UploadFailed(exception)
+            is MeasurementTooLarge,
             // `HTTP_BAD_REQUEST` (400).
-            is BadRequestException -> throw UploadFailed(exception)
+            is BadRequestException,
             // `HTTP_UNAUTHORIZED` (401).
-            is UnauthorizedException -> throw UploadFailed(exception)
+            is UnauthorizedException,
             // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in caller.
-            is ForbiddenException -> throw UploadFailed(exception)
+            is ForbiddenException,
             // `HTTP_CONFLICT` (409). Already uploaded. Handle in caller (e.g. mark as synced).
-            is ConflictException -> throw UploadFailed(exception)
+            is ConflictException,
             // `HTTP_ENTITY_NOT_PROCESSABLE` (422).
-            is EntityNotParsableException -> throw UploadFailed(exception)
+            is EntityNotParsableException,
             // `HTTP_INTERNAL_ERROR` (500).
-            is InternalServerErrorException -> throw UploadFailed(exception)
+            is InternalServerErrorException,
             // `HTTP_TOO_MANY_REQUESTS` (429). Try again later.
-            is TooManyRequestsException -> throw UploadFailed(exception)
+            is TooManyRequestsException,
             // IOException while reading the response. Try again later.
-            is SynchronisationException -> throw UploadFailed(exception)
+            is SynchronisationException,
             // `HTTP_NOT_FOUND` (404). Try again.
-            is UploadSessionExpired -> throw UploadFailed(exception)
+            is UploadSessionExpired,
             // Unexpected response code. Should be reported to the server admin.
-            is UnexpectedResponseCode -> throw UploadFailed(exception)
+            is UnexpectedResponseCode,
             // `PRECONDITION_REQUIRED` (428). Shouldn't happen during upload, report to server admin.
-            is AccountNotActivated -> throw UploadFailed(exception)
+            is AccountNotActivated
+
+            -> throw UploadFailed(exception)
+
             // This is not yet thrown as a specific exception.
             // Network without internet connection. Try again later.
             // is HostUnresolvable -> throw LoginFailed(e)
 
+            // Happened on emulator when endpoint is local network instead of 10.0.2.2 [DAT-727]
+            // Server not reachable. Try again later.
+            is SocketTimeoutException -> throw UploadFailed(ServerUnavailableException(exception))
+
+            is SSLException, is InterruptedIOException, is IOException -> handleNetworkException(exception)
+
             else -> throw UploadFailed(SynchronisationException(exception))
+        }
+    }
+
+    private fun handleNetworkException(exception: Exception): Nothing {
+        fun logAndThrow(message: String, e: Exception, wrap: (Exception) -> Exception): Nothing {
+            LOGGER.warn("$message: ${e.message}")
+            throw wrap(e)
+        }
+
+        when (exception) {
+            is SSLException -> {
+                // Thrown by OkHttp when the network is no longer available [DAT-740]. Try again later.
+                if (exception.message?.contains("I/O error during system call, Broken pipe") == true) {
+                    logAndThrow("Network became unavailable during upload", exception) {
+                        UploadFailed(NetworkUnavailableException(it))
+                    }
+                }
+                logAndThrow("Caught SSLException", exception) {
+                    UploadFailed(SynchronisationException(it))
+                }
+            }
+            is InterruptedIOException -> {
+                // Request interrupted [DAT-741]. Try again later.
+                if (exception.message?.contains("thread interrupted") == true) {
+                    logAndThrow("Network interrupted during upload", exception) {
+                        UploadFailed(NetworkUnavailableException(it))
+                    }
+                }
+                // InterruptedIOException while reading the response. Try again later.
+                logAndThrow("Caught InterruptedIOException", exception) {
+                    UploadFailed(SynchronisationException(it))
+                }
+            }
+            is IOException -> {
+                // Unstable Wi-Fi connection [DAT-742]. transmission stream ended too early, likely because the sync
+                // thread was interrupted (sync canceled). Try again later.
+                if (exception.message?.contains("unexpected end of stream") == true) {
+                    logAndThrow("Upload interrupted", exception, ::SynchronizationInterruptedException)
+                }
+                // IOException while reading the response. Try again later.
+                logAndThrow("Caught IOException", exception, ::SynchronisationException)
+            }
+            else -> throw exception
         }
     }
 
@@ -310,14 +327,8 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         }
     }
 
-    internal class ProgressHandler(progressListener: UploadProgressListener) :
+    internal class ProgressHandler(private val progressListener: UploadProgressListener) :
         MediaHttpUploaderProgressListener {
-
-        private val progressListener: UploadProgressListener
-
-        init {
-            this.progressListener = progressListener
-        }
 
         @Throws(IOException::class)
         override fun progressChanged(uploader: MediaHttpUploader) {
@@ -402,44 +413,6 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
             } else {
                 "$url/"
             }
-        }
-
-        /**
-         * Assembles a `HttpContent` object which contains the metadata.
-         *
-         * @param metaData The metadata to convert.
-         * @return The meta data as `HttpContent`.
-         */
-        fun preRequestBody(metaData: RequestMetaData): Map<String, String> {
-            val attributes: MutableMap<String, String> = HashMap()
-
-            // Location meta data
-            metaData.startLocation?.let { startLocation ->
-                attributes["startLocLat"] = startLocation.latitude.toString()
-                attributes["startLocLon"] = startLocation.longitude.toString()
-                attributes["startLocTS"] = startLocation.timestamp.toString()
-            }
-            metaData.endLocation?.let { endLocation ->
-                attributes["endLocLat"] = endLocation.latitude.toString()
-                attributes["endLocLon"] = endLocation.longitude.toString()
-                attributes["endLocTS"] = endLocation.timestamp.toString()
-            }
-            attributes["locationCount"] = metaData.locationCount.toString()
-
-            // Remaining meta data
-            attributes["deviceId"] = metaData.deviceIdentifier
-            attributes["measurementId"] = metaData.measurementIdentifier
-            attributes["deviceType"] = metaData.deviceType
-            attributes["osVersion"] = metaData.operatingSystemVersion
-            attributes["appVersion"] = metaData.applicationVersion
-            attributes["length"] = metaData.length.toString()
-            attributes["modality"] = metaData.modality
-            attributes["formatVersion"] = metaData.formatVersion.toString()
-            attributes["logCount"] = metaData.logCount.toString()
-            attributes["imageCount"] = metaData.imageCount.toString()
-            attributes["videoCount"] = metaData.videoCount.toString()
-            attributes["filesSize"] = metaData.filesSize.toString()
-            return attributes
         }
 
         @Suppress("MemberVisibilityCanBePrivate") // Part of the API
@@ -547,24 +520,20 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
          * @return the [String] read from the InputStream. If an I/O error occurs while reading from the stream, the
          * already read string is returned which might my empty or cut short.
          */
-        @Suppress("MemberVisibilityCanBePrivate", "NestedBlockDepth") // Part of the API
+        @Suppress("MemberVisibilityCanBePrivate") // Part of the API
         @JvmStatic
         fun readInputStream(inputStream: InputStream): String {
-            try {
-                try {
-                    BufferedReader(
-                        InputStreamReader(inputStream, DEFAULT_CHARSET)
-                    ).use { bufferedReader ->
-                        val responseString = StringBuilder()
-                        var line: String?
-                        while (bufferedReader.readLine().also { line = it } != null) {
-                            responseString.append(line)
-                        }
-                        return responseString.toString()
+            return try {
+                BufferedReader(InputStreamReader(inputStream, DEFAULT_CHARSET)).use { bufferedReader ->
+                    val responseString = StringBuilder()
+                    var line: String?
+                    while (bufferedReader.readLine().also { line = it } != null) {
+                        responseString.append(line)
                     }
-                } catch (e: UnsupportedEncodingException) {
-                    error(e)
+                    responseString.toString()
                 }
+            } catch (e: UnsupportedEncodingException) {
+                error(e)
             } catch (e: IOException) {
                 error(e)
             }

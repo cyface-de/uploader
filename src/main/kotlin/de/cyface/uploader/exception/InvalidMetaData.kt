@@ -19,26 +19,12 @@
 package de.cyface.uploader.exception
 
 /**
- * An `Exception` thrown when the network used for transmission is no longer available.
- *
- * This is usually indicated by OkHttp via `SSLException`.
+ * Exception thrown when the upload or pre-request does not contain the expected metadata.
  *
  * @author Armin Schnabel
  */
-class NetworkUnavailableException : Exception {
-    /**
-     * @param exception The `Exception` that caused this one.
-     */
-    constructor(exception: Exception) : super(exception)
-
-    /**
-     * @param detailedMessage A more detailed message explaining the context for this `Exception`.
-     */
-    constructor(detailedMessage: String) : super(detailedMessage)
-
-    /**
-     * @param detailedMessage A more detailed message explaining the context for this `Exception`.
-     * @param cause The `Exception` that caused this one.
-     */
-    constructor(detailedMessage: String, cause: Exception) : super(detailedMessage, cause)
+class InvalidMetaData : Exception {
+    constructor(message: String, cause: Throwable) : super(message, cause)
+    constructor(message: String) : super(message)
+    constructor(cause: Throwable) : super(cause)
 }
