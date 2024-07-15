@@ -27,10 +27,10 @@ import java.util.UUID
 
 data class Measurement(
     val identifier: MeasurementIdentifier,
-    private val deviceMetaData: DeviceMetaData,
-    private val applicationMetaData: ApplicationMetaData,
-    private val measurementMetaData: MeasurementMetaData,
-    private val attachmentMetaData: AttachmentMetaData,
+    val deviceMetaData: DeviceMetaData,
+    val applicationMetaData: ApplicationMetaData,
+    val measurementMetaData: MeasurementMetaData,
+    val attachmentMetaData: AttachmentMetaData,
 ) : Uploadable {
     override fun toMap(): Map<String, String> {
         val map = mutableMapOf<String, String>()
