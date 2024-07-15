@@ -171,79 +171,95 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
      * We wrap errors with [UploadFailed] so that the caller can handle this without crashing.
      * This way the SDK's `SyncPerformer` can determine if the sync should be repeated.
      */
-    @Suppress("ComplexMethod")
     private fun handleUploadException(exception: Exception): Nothing {
-        fun handleIOException(e: IOException): Nothing {
-            LOGGER.warn("Caught IOException: ${e.message}")
-            // Unstable Wi-Fi connection [DAT-742]. transmission stream ended too early, likely because the sync
-            // thread was interrupted (sync canceled). Try again later.
-            if (e.message?.contains("unexpected end of stream") == true) {
-                throw SynchronizationInterruptedException("Upload interrupted", e)
-            }
-            // IOException while reading the response. Try again later.
-            throw UploadFailed(SynchronisationException(e))
-        }
-
-        fun handleSSLException(e: SSLException): Nothing {
-            LOGGER.warn("Caught SSLException: ${e.message}")
-            // Thrown by OkHttp when the network is no longer available [DAT-740]. Try again later.
-            if (e.message?.contains("I/O error during system call, Broken pipe") == true) {
-                throw UploadFailed(NetworkUnavailableException("Network became unavailable during upload."))
-            }
-            throw UploadFailed(SynchronisationException(e))
-        }
-
         when (exception) {
             // Crash unexpected errors hard
             is MalformedURLException -> error(exception)
 
             // Soft caught errors
 
-            // Happened on emulator when endpoint is local network instead of 10.0.2.2 [DAT-727]
-            // Server not reachable. Try again later.
-            is SocketTimeoutException -> throw UploadFailed(ServerUnavailableException(exception))
-            is SSLException -> handleSSLException(exception)
-            is InterruptedIOException -> {
-                LOGGER.warn("Caught InterruptedIOException: ${exception.message}")
-                // Request interrupted [DAT-741]. Try again later.
-                if (exception.message?.contains("thread interrupted") == true) {
-                    throw UploadFailed(NetworkUnavailableException("Network interrupted during upload", exception))
-                }
-                // InterruptedIOException while reading the response. Try again later.
-                throw UploadFailed(SynchronisationException(exception))
-            }
-
-            is IOException -> handleIOException(exception)
             // File is too large to be uploaded. Handle in caller (e.g. skip the upload).
             // The max size is currently static and set to 100 MB which should be about 44 hours of 100 Hz measurement.
-            is MeasurementTooLarge -> throw UploadFailed(exception)
+            is MeasurementTooLarge,
             // `HTTP_BAD_REQUEST` (400).
-            is BadRequestException -> throw UploadFailed(exception)
+            is BadRequestException,
             // `HTTP_UNAUTHORIZED` (401).
-            is UnauthorizedException -> throw UploadFailed(exception)
+            is UnauthorizedException,
             // `HTTP_FORBIDDEN` (403). Seems to happen when server is unavailable. Handle in caller.
-            is ForbiddenException -> throw UploadFailed(exception)
+            is ForbiddenException,
             // `HTTP_CONFLICT` (409). Already uploaded. Handle in caller (e.g. mark as synced).
-            is ConflictException -> throw UploadFailed(exception)
+            is ConflictException,
             // `HTTP_ENTITY_NOT_PROCESSABLE` (422).
-            is EntityNotParsableException -> throw UploadFailed(exception)
+            is EntityNotParsableException,
             // `HTTP_INTERNAL_ERROR` (500).
-            is InternalServerErrorException -> throw UploadFailed(exception)
+            is InternalServerErrorException,
             // `HTTP_TOO_MANY_REQUESTS` (429). Try again later.
-            is TooManyRequestsException -> throw UploadFailed(exception)
+            is TooManyRequestsException,
             // IOException while reading the response. Try again later.
-            is SynchronisationException -> throw UploadFailed(exception)
+            is SynchronisationException,
             // `HTTP_NOT_FOUND` (404). Try again.
-            is UploadSessionExpired -> throw UploadFailed(exception)
+            is UploadSessionExpired,
             // Unexpected response code. Should be reported to the server admin.
-            is UnexpectedResponseCode -> throw UploadFailed(exception)
+            is UnexpectedResponseCode,
             // `PRECONDITION_REQUIRED` (428). Shouldn't happen during upload, report to server admin.
-            is AccountNotActivated -> throw UploadFailed(exception)
+            is AccountNotActivated
+
+            -> throw UploadFailed(exception)
+
             // This is not yet thrown as a specific exception.
             // Network without internet connection. Try again later.
             // is HostUnresolvable -> throw LoginFailed(e)
 
+            // Happened on emulator when endpoint is local network instead of 10.0.2.2 [DAT-727]
+            // Server not reachable. Try again later.
+            is SocketTimeoutException -> throw UploadFailed(ServerUnavailableException(exception))
+
+            is SSLException, is InterruptedIOException, is IOException -> handleNetworkException(exception)
+
             else -> throw UploadFailed(SynchronisationException(exception))
+        }
+    }
+
+    private fun handleNetworkException(exception: Exception): Nothing {
+        fun logAndThrow(message: String, e: Exception, wrap: (Exception) -> Exception): Nothing {
+            LOGGER.warn("$message: ${e.message}")
+            throw wrap(e)
+        }
+
+        when (exception) {
+            is SSLException -> {
+                // Thrown by OkHttp when the network is no longer available [DAT-740]. Try again later.
+                if (exception.message?.contains("I/O error during system call, Broken pipe") == true) {
+                    logAndThrow("Network became unavailable during upload", exception) {
+                        UploadFailed(NetworkUnavailableException(it))
+                    }
+                }
+                logAndThrow("Caught SSLException", exception) {
+                    UploadFailed(SynchronisationException(it))
+                }
+            }
+            is InterruptedIOException -> {
+                // Request interrupted [DAT-741]. Try again later.
+                if (exception.message?.contains("thread interrupted") == true) {
+                    logAndThrow("Network interrupted during upload", exception) {
+                        UploadFailed(NetworkUnavailableException(it))
+                    }
+                }
+                // InterruptedIOException while reading the response. Try again later.
+                logAndThrow("Caught InterruptedIOException", exception) {
+                    UploadFailed(SynchronisationException(it))
+                }
+            }
+            is IOException -> {
+                // Unstable Wi-Fi connection [DAT-742]. transmission stream ended too early, likely because the sync
+                // thread was interrupted (sync canceled). Try again later.
+                if (exception.message?.contains("unexpected end of stream") == true) {
+                    logAndThrow("Upload interrupted", exception, ::SynchronizationInterruptedException)
+                }
+                // IOException while reading the response. Try again later.
+                logAndThrow("Caught IOException", exception, ::SynchronisationException)
+            }
+            else -> throw exception
         }
     }
 

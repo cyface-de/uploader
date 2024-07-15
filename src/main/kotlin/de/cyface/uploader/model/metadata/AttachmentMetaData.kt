@@ -18,7 +18,6 @@
  */
 package de.cyface.uploader.model.metadata
 
-//import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 /**
@@ -42,15 +41,6 @@ data class AttachmentMetaData(
         require(videoCount >= 0) { "Invalid videoCount: $videoCount" }
         require(filesSize >= 0) { "Invalid filesSize: $filesSize" }
     }
-
-    /*override fun toJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put(FormAttributes.LOG_COUNT.value, logCount)
-        ret.put(FormAttributes.IMAGE_COUNT.value, imageCount)
-        ret.put(FormAttributes.VIDEO_COUNT.value, videoCount)
-        ret.put(FormAttributes.FILES_SIZE.value, filesSize)
-        return ret
-    }*/
 
     companion object {
         /**

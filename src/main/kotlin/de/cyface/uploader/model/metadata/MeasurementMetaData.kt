@@ -20,8 +20,6 @@ package de.cyface.uploader.model.metadata
 
 import de.cyface.uploader.exception.TooFewLocations
 import de.cyface.uploader.model.metadata.MetaData.Companion.MAX_GENERIC_METADATA_FIELD_LENGTH
-//import io.vertx.core.json.JsonArray
-//import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 /**
@@ -59,20 +57,6 @@ data class MeasurementMetaData(
         }
     }
 
-    /*override fun toJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put(FormAttributes.LENGTH.value, length)
-        ret.put(FormAttributes.LOCATION_COUNT.value, locationCount)
-        if (startLocation != null) {
-            ret.put("start", startLocation.geoJson())
-        }
-        if (endLocation != null) {
-            ret.put("end", endLocation.geoJson())
-        }
-        ret.put(FormAttributes.MODALITY.value, modality)
-        return ret
-    }*/
-
     companion object {
         /**
          * Used to serialize objects of this class. Only change this value if this classes attribute set changes.
@@ -104,23 +88,7 @@ data class GeoLocation(
     val timestamp: Long,
     val latitude: Double,
     val longitude: Double
-) {
-    /**
-     * Converts this location record into `JSON` which supports the mongoDB `GeoJSON` format:
-     * https://docs.mongodb.com/manual/geospatial-queries/
-     *
-     * @return the converted location record as JSON
-     */
-    /*fun geoJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put("timestamp", timestamp)
-        val geometry = JsonObject()
-            .put("type", "Point")
-            .put("coordinates", JsonArray().add(longitude).add(latitude))
-        ret.put("location", geometry)
-        return ret
-    }*/
-}
+)
 
 /**
  * Factory to create [GeoLocation] objects from given parameters.

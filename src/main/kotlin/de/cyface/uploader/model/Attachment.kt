@@ -18,21 +18,11 @@
  */
 package de.cyface.uploader.model
 
-import de.cyface.uploader.exception.DeprecatedFormatVersion
 import de.cyface.uploader.exception.InvalidMetaData
-import de.cyface.uploader.exception.UnknownFormatVersion
-import de.cyface.uploader.model.Uploadable.Companion.DEVICE_ID_FIELD
-import de.cyface.uploader.model.Uploadable.Companion.MEASUREMENT_ID_FIELD
 import de.cyface.uploader.model.metadata.ApplicationMetaData
 import de.cyface.uploader.model.metadata.AttachmentMetaData
 import de.cyface.uploader.model.metadata.DeviceMetaData
 import de.cyface.uploader.model.metadata.MeasurementMetaData
-/*import io.vertx.core.Future
-import io.vertx.core.MultiMap
-import io.vertx.core.Promise
-import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.Session*/
-import java.util.Locale
 import java.util.UUID
 
 data class Attachment(
@@ -42,40 +32,6 @@ data class Attachment(
     private val measurementMetaData: MeasurementMetaData,
     private val attachmentMetaData: AttachmentMetaData,
 ) : Uploadable {
-    /*override fun toJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put(FormAttributes.DEVICE_ID.value, identifier.deviceIdentifier.toString())
-        ret.put(FormAttributes.MEASUREMENT_ID.value, identifier.measurementIdentifier.toString())
-        ret.put(FormAttributes.ATTACHMENT_ID.value, identifier.attachmentIdentifier.toString())
-        ret
-            .mergeIn(deviceMetaData.toJson(), true)
-            .mergeIn(applicationMetaData.toJson(), true)
-            .mergeIn(measurementMetaData.toJson(), true)
-            .mergeIn(attachmentMetaData.toJson(), true)
-        return ret
-    }
-
-    override fun toGeoJson(): JsonObject {
-        val geoJson = toGeoJson(deviceMetaData, applicationMetaData, measurementMetaData, attachmentMetaData)
-
-        val properties = geoJson.getJsonObject("properties")
-        properties.put(FormAttributes.DEVICE_ID.value, identifier.deviceIdentifier)
-        properties.put(FormAttributes.MEASUREMENT_ID.value, identifier.measurementIdentifier)
-        properties.put(FormAttributes.ATTACHMENT_ID.value, identifier.attachmentIdentifier)
-
-        return geoJson
-    }*/
-
-    companion object {
-        /**
-         * The field name for the session entry which contains the attachment id if this is an attachment upload.
-         *
-         * This field is set in the [PreRequestHandler] to ensure sessions are bound to attachments and
-         * uploads are only accepted with an accepted pre request.
-         */
-        const val ATTACHMENT_ID_FIELD = "attachment-id"
-    }
-
     override fun toMap(): Map<String, String> {
         val map = mutableMapOf<String, String>()
 
@@ -119,66 +75,6 @@ data class AttachmentIdentifier(
 )
 
 class AttachmentFactory : UploadableFactory {
-    /*override fun from(json: JsonObject): Uploadable {
-        try {
-            val deviceIdentifier = UUID.fromString(json.getString(FormAttributes.DEVICE_ID.value))
-            val measurementIdentifier = json.getString(FormAttributes.MEASUREMENT_ID.value).toLong()
-            val attachmentIdentifier = json.getString(FormAttributes.ATTACHMENT_ID.value).toLong()
-
-            val applicationMetaData = applicationMetaData(json)
-            val attachmentMetaData = attachmentMetaData(json)
-            val deviceMetaData = deviceMetaData(json)
-            val measurementMetaData = measurementMetaData(json)
-
-            return Attachment(
-                AttachmentIdentifier(deviceIdentifier, measurementIdentifier, attachmentIdentifier),
-                deviceMetaData,
-                applicationMetaData,
-                measurementMetaData,
-                attachmentMetaData,
-            )
-        } catch (e: TooFewLocations) {
-            throw SkipUpload(e)
-        } catch (e: IllegalArgumentException) {
-            throw InvalidMetaData("Data was not parsable!", e)
-        } catch (e: NullPointerException) {
-            throw InvalidMetaData("Data was not parsable!", e)
-        }
-    }
-
-    override fun from(headers: MultiMap): Uploadable {
-        try {
-            val deviceId = UUID.fromString(requireNotNull(headers.get(FormAttributes.DEVICE_ID.value)))
-            val measurementId = requireNotNull(headers.get(FormAttributes.MEASUREMENT_ID.value)).toLong()
-            val attachmentIdentifier = requireNotNull(headers.get(FormAttributes.ATTACHMENT_ID.value)).toLong()
-
-            val attachmentMetaData = attachmentMetaData(headers)
-            val applicationMetaData = applicationMetaData(headers)
-            val measurementMetaData = measurementMetaData(headers)
-            val deviceMetaData = deviceMetaData(headers)
-
-            return Attachment(
-                AttachmentIdentifier(deviceId, measurementId, attachmentIdentifier),
-                deviceMetaData,
-                applicationMetaData,
-                measurementMetaData,
-                attachmentMetaData,
-            )
-        } catch (e: IllegalArgumentException) {
-            throw InvalidMetaData("Data incomplete!", e)
-        } catch (e: NumberFormatException) {
-            throw InvalidMetaData("Data incomplete!", e)
-        } catch (e: DeprecatedFormatVersion) {
-            throw SkipUpload(e)
-        } catch (e: UnknownFormatVersion) {
-            throw InvalidMetaData(e)
-        } catch (e: TooFewLocations) {
-            throw SkipUpload(e)
-        } catch (e: RuntimeException) {
-            throw InvalidMetaData("Data was not parsable!", e)
-        }
-    }*/
-
     override fun attachmentMetaData(
         logCount: String?,
         imageCount: String?,

@@ -21,7 +21,6 @@ package de.cyface.uploader.model.metadata
 import de.cyface.uploader.exception.DeprecatedFormatVersion
 import de.cyface.uploader.exception.UnknownFormatVersion
 import de.cyface.uploader.model.metadata.MetaData.Companion.MAX_GENERIC_METADATA_FIELD_LENGTH
-//import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 /**
@@ -45,13 +44,6 @@ data class ApplicationMetaData(
             throw UnknownFormatVersion("Unknown formatVersion: ${formatVersion.toLong()}")
         }
     }
-
-    /*override fun toJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put(FormAttributes.APPLICATION_VERSION.value, applicationVersion)
-        ret.put(FormAttributes.FORMAT_VERSION.value, formatVersion)
-        return ret
-    }*/
 
     companion object {
         /**

@@ -61,8 +61,6 @@ version = "0.0.0" // Automatically overwritten by CI
 
 // Versions of dependencies
 extra["slf4jVersion"] = "2.0.7"
-// TODO: Check if we can remove this after we port the new auth from android-backend to this library
-extra["cyfaceSerializationVersion"] = "4.0.0-alpha2" // FIXME
 extra["googleApiClientVersion"] = "2.2.0" // transmission protocol
 extra["gradleWrapperVersion"] = "7.6.1"
 
@@ -100,7 +98,6 @@ tasks.test {
 
 dependencies {
   // Internal Cyface Dependencies
-  api("de.cyface:serializer:${project.extra["cyfaceSerializationVersion"]}")
   implementation("com.google.api-client:google-api-client:${project.extra["googleApiClientVersion"]}")
 
   // Kotlin Support

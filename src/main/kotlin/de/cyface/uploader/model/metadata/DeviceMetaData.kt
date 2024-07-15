@@ -19,7 +19,6 @@
 package de.cyface.uploader.model.metadata
 
 import de.cyface.uploader.model.metadata.MetaData.Companion.MAX_GENERIC_METADATA_FIELD_LENGTH
-//import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 /**
@@ -45,13 +44,6 @@ data class DeviceMetaData(
             "Field deviceType had an invalid length of ${deviceType.length.toLong()}"
         }
     }
-
-    /*override fun toJson(): JsonObject {
-        val ret = JsonObject()
-        ret.put(FormAttributes.OS_VERSION.value, operatingSystemVersion)
-        ret.put(FormAttributes.DEVICE_TYPE.value, deviceType)
-        return ret
-    }*/
 
     companion object {
         /**

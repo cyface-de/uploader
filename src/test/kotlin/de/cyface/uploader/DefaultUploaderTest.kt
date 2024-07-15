@@ -20,9 +20,15 @@ package de.cyface.uploader
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import de.cyface.model.Modality
-import de.cyface.model.RequestMetaData
+import de.cyface.uploader.model.Measurement
+import de.cyface.uploader.model.MeasurementIdentifier
+import de.cyface.uploader.model.metadata.ApplicationMetaData
+import de.cyface.uploader.model.metadata.AttachmentMetaData
+import de.cyface.uploader.model.metadata.DeviceMetaData
+import de.cyface.uploader.model.metadata.GeoLocation
+import de.cyface.uploader.model.metadata.MeasurementMetaData
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 /**
  * Tests whether our default implementation of the HTTP protocol works as expected.
@@ -35,31 +41,28 @@ class DefaultUploaderTest {
      */
     @Test
     fun testPreRequestBody() {
-        val deviceId = "testDevi-ce00-42b6-a840-1b70d30094b8" // Must be a valid UUID
-        val measurementId = 78
-        val startLocation = RequestMetaData.MeasurementMetaData.GeoLocation(1000000000L, 51.1, 13.1)
-        val endLocation = RequestMetaData.MeasurementMetaData.GeoLocation(1000010000L, 51.2, 13.2)
-        val metaData = RequestMetaData(
-            RequestMetaData.MeasurementIdentifier(
-                deviceId,
-                measurementId.toString(),
-            ),
-            RequestMetaData.DeviceMetaData(
+        val deviceId = UUID.randomUUID()
+        val measurementId = 78L
+        val startLocation = GeoLocation(1000000000L, 51.1, 13.1)
+        val endLocation = GeoLocation(1000010000L, 51.2, 13.2)
+        val uploadable = Measurement(
+            MeasurementIdentifier(deviceId, measurementId),
+            DeviceMetaData(
                 "test_osVersion",
                 "test_deviceType",
             ),
-            RequestMetaData.ApplicationMetaData(
+            ApplicationMetaData(
                 "test_appVersion",
                 3,
             ),
-            RequestMetaData.MeasurementMetaData(
+            MeasurementMetaData(
                 10.0,
                 5,
                 startLocation,
                 endLocation,
-                Modality.BICYCLE.databaseIdentifier,
+                "BICYCLE",
             ),
-            RequestMetaData.AttachmentMetaData(
+            AttachmentMetaData(
                 0,
                 0,
                 0,
@@ -68,7 +71,7 @@ class DefaultUploaderTest {
         )
 
         // Act
-        val result: Map<String, String> = metaData.toMap()
+        val result: Map<String, String> = uploadable.toMap()
 
         // Assert
         val expected: MutableMap<String, String> = HashMap()
@@ -78,7 +81,7 @@ class DefaultUploaderTest {
         expected["endLocLat"] = "51.2"
         expected["endLocLon"] = "13.2"
         expected["endLocTS"] = "1000010000"
-        expected["deviceId"] = deviceId
+        expected["deviceId"] = deviceId.toString()
         expected["measurementId"] = "78"
         expected["deviceType"] = "test_deviceType"
         expected["osVersion"] = "test_osVersion"
