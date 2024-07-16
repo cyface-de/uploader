@@ -70,9 +70,11 @@ data class MeasurementMetaData(
         private const val MINIMUM_TRACK_LENGTH = 0.0
 
         /**
-         * The minimum valid amount of locations stored inside a measurement, or else skip the upload.
+         * The minimum valid amount of locations stored inside a measurement.
+         *
+         * This is used on the client-side, so we need to allow < 2 locations to be sent, the server decides skipping.
          */
-        private const val MINIMUM_LOCATION_COUNT = 2L
+        private const val MINIMUM_LOCATION_COUNT = 0L
     }
 }
 
