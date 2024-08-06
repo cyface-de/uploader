@@ -40,10 +40,6 @@ buildscript {
 plugins {
   id("eclipse")
   id("idea")
-  // For building executable fat jars
-  id("com.github.johnrengelman.shadow").version("7.1.2")
-  // Plugin to display the Gradle task graph
-  @Suppress("SpellCheckingInspection")
   id("org.barfuin.gradle.taskinfo").version("2.1.0")
 
   id("maven-publish")
