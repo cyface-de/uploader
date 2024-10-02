@@ -79,7 +79,9 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         file: File,
         progressListener: UploadProgressListener
     ): Result {
-        val endpoint = measurementsEndpoint()
+        val measurementId = uploadable.identifier.measurementIdentifier
+        val deviceId = uploadable.identifier.deviceIdentifier.toString()
+        val endpoint = measurementsEndpoint(deviceId, measurementId)
         return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
@@ -96,7 +98,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
-    override fun measurementsEndpoint(): URL {
+    override fun measurementsEndpoint(deviceId: String, measurementId: Long): URL {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
