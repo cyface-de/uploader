@@ -29,7 +29,7 @@ data class Attachment(
     val identifier: AttachmentIdentifier,
     private val deviceMetaData: DeviceMetaData,
     private val applicationMetaData: ApplicationMetaData,
-    private val measurementMetaData: MeasurementMetaData,
+    val measurementMetaData: MeasurementMetaData,
     private val attachmentMetaData: AttachmentMetaData,
 ) : Uploadable {
     override fun toMap(): Map<String, String> {
@@ -65,6 +65,18 @@ data class Attachment(
         map[FormAttributes.FILES_SIZE.value] = attachmentMetaData.filesSize.toString()
 
         return map
+    }
+
+    override fun deviceId(): String {
+        return identifier.deviceIdentifier.toString()
+    }
+
+    override fun measurementId(): Long {
+        return identifier.measurementIdentifier
+    }
+
+    override fun timestamp(): Long? {
+        return measurementMetaData.startLocation?.timestamp
     }
 }
 
