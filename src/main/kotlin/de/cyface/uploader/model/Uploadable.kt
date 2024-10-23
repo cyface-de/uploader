@@ -35,6 +35,9 @@ interface Uploadable {
 
     fun measurementId(): Long
 
+    /**
+     * The Unix timestamp in milliseconds or `null` if no locations exist, which is legitimate [LEIP-1187].
+     */
     fun timestamp(): Long?
 }
 
