@@ -28,8 +28,8 @@ import java.io.Serializable
  * @author Armin Schnabel
  * @property length The length of the measurement in meters.
  * @property locationCount The count of geolocations in the transmitted measurement.
- * @property startLocation The first [GeoLocation] captured by the transmitted measurement.
- * @property endLocation The last [GeoLocation] captured by the transmitted measurement.
+ * @property startLocation The first [GeoLocation] captured by the transmitted measurement, if available.
+ * @property endLocation The last [GeoLocation] captured by the transmitted measurement, if available.
  * @property modality The modality type used to capture the measurement.
  */
 data class MeasurementMetaData(
@@ -40,14 +40,10 @@ data class MeasurementMetaData(
     val modality: String,
 ) : MetaData, Serializable {
     init {
+        // A measurement _without_ locations (`startLocation=null`) _is_ legitimate, as we want the server
+        // to be able to decide if such measurements should be uploaded or not. [LEIP-1187]
         if (locationCount < MINIMUM_LOCATION_COUNT) {
             throw TooFewLocations("LocationCount smaller than required: $locationCount")
-        }
-        requireNotNull(startLocation) {
-            "Data incomplete startLocation was null!"
-        }
-        requireNotNull(endLocation) {
-            "Data incomplete endLocation was null!"
         }
         require(length >= MINIMUM_TRACK_LENGTH) {
             "Field length had an invalid value smaller then 0.0: $length"
