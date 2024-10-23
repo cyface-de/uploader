@@ -65,6 +65,18 @@ data class Measurement(
 
         return map
     }
+
+    override fun deviceId(): String {
+        return identifier.deviceIdentifier.toString()
+    }
+
+    override fun measurementId(): Long {
+        return identifier.measurementIdentifier
+    }
+
+    override fun timestamp(): Long? {
+        return measurementMetaData.startLocation?.timestamp
+    }
 }
 
 data class MeasurementIdentifier(val deviceIdentifier: UUID, val measurementIdentifier: Long)

@@ -79,7 +79,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         file: File,
         progressListener: UploadProgressListener
     ): Result {
-        val endpoint = measurementsEndpoint()
+        val endpoint = measurementsEndpoint(uploadable)
         return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
@@ -90,17 +90,17 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         fileName: String,
         progressListener: UploadProgressListener,
     ): Result {
-        val measurementId = uploadable.identifier.measurementIdentifier
-        val deviceId = uploadable.identifier.deviceIdentifier.toString()
-        val endpoint = attachmentsEndpoint(deviceId, measurementId)
+        val endpoint = attachmentsEndpoint(uploadable)
         return uploadFile(jwtToken, uploadable, file, endpoint, progressListener)
     }
 
-    override fun measurementsEndpoint(): URL {
+    override fun measurementsEndpoint(uploadable: Uploadable): URL {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements")
     }
 
-    override fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL {
+    override fun attachmentsEndpoint(uploadable: Uploadable): URL {
+        val measurementId = uploadable.measurementId()
+        val deviceId = uploadable.deviceId()
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$deviceId/$measurementId/attachments")
     }
 

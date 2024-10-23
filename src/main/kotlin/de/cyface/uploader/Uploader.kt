@@ -74,20 +74,22 @@ interface Uploader {
     ): Result
 
     /**
+     * Determines the URL endpoint for uploading files associated with a specific measurement.
+     *
+     * @param uploadable The file to upload.
      * @return The URL endpoint used for uploading measurement files.
      * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun measurementsEndpoint(): URL
+    fun measurementsEndpoint(uploadable: Uploadable): URL
 
     /**
      * Determines the URL endpoint for uploading attachment files associated with a specific measurement.
      *
-     * @param deviceId The ID of the device the measurement is attached to.
-     * @param measurementId The ID of the measurement the files are attached to.
+     * @param uploadable The file to upload.
      * @return The URL endpoint used for uploading attachment files.
      * @throws MalformedURLException if the endpoint address is malformed.
      */
     @Throws(MalformedURLException::class)
-    fun attachmentsEndpoint(deviceId: String, measurementId: Long): URL
+    fun attachmentsEndpoint(uploadable: Uploadable): URL
 }

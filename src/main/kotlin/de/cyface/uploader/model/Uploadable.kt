@@ -30,6 +30,12 @@ interface Uploadable {
      * Transform this object into a `Map` representation which can be injected into the upload request header.
      */
     fun toMap(): Map<String, String>
+
+    fun deviceId(): String
+
+    fun measurementId(): Long
+
+    fun timestamp(): Long?
 }
 
 /**
