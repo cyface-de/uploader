@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Cyface GmbH
+ * Copyright (C) 2019-2025 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -93,7 +93,7 @@ tasks.test {
 }
 
 dependencies {
-  // Internal Cyface Dependencies
+  // Uploading
   implementation("com.google.api-client:google-api-client:${project.extra["googleApiClientVersion"]}")
 
   // Kotlin Support

@@ -18,25 +18,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
 
-      # version is required to publish artifacts to Github Registry
+      # version is required to publish artifacts to GitHub Registry
       - name: Set version
         run: |
           sed -i "s/version = \"0.0.0\"/version = \"${{ github.ref_name }}\"/g" build.gradle.kts
 
-      # Publish slim JARS to Github Package Registry
+      # Publish slim JARS to GitHub Package Registry
       - name: Publish with Gradle
         run: ./gradlew publish
         env:
           USERNAME: ${{ github.actor }}
           PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-      # Automatically mark this tag as release on Github
+      # Automatically mark this tag as release on GitHub
       - name: Mark tag as release on Github
         uses: actions/create-release@v1
         id: create_release
