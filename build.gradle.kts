@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Cyface GmbH
+ * Copyright (C) 2019-2025 Cyface GmbH
  *
  * This file is part of the Cyface Uploader.
  *
@@ -43,7 +43,7 @@ plugins {
   id("org.barfuin.gradle.taskinfo").version("2.1.0")
 
   id("maven-publish")
-  kotlin("jvm").version("1.8.20")
+  kotlin("jvm").version("2.1.20")
 
   // For static code checks
   id("io.gitlab.arturbosch.detekt").version("1.22.0")
@@ -93,7 +93,7 @@ tasks.test {
 }
 
 dependencies {
-  // Internal Cyface Dependencies
+  // Uploading
   implementation("com.google.api-client:google-api-client:${project.extra["googleApiClientVersion"]}")
 
   // Kotlin Support
