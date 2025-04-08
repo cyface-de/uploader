@@ -105,7 +105,7 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$deviceId/$measurementId/attachments")
     }
 
-    override fun onUploadFinished() {
+    override fun onUploadFinished(uploadable: Uploadable) {
         // Nothing to do (only required by WebdavUploader)
     }
 

@@ -94,7 +94,9 @@ interface Uploader {
     fun attachmentsEndpoint(uploadable: Uploadable): URL
 
     /**
-     * Is called when all files have been uploaded and the measurement marked as synced.
+     * Is called when all files of a measurement have been uploaded and the measurement marked as synced.
+     *
+     * @param uploadable The measurement uploadable which was successfully uploaded.
      */
-    fun onUploadFinished()
+    fun onUploadFinished(uploadable: Uploadable)
 }
