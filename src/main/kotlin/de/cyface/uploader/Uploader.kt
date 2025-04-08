@@ -95,6 +95,8 @@ interface Uploader {
 
     /**
      * Is called when all files have been uploaded and the measurement marked as synced.
+     *
+     * @param measurementId The measurement which was successfully uploaded.
      */
-    fun onUploadFinished()
+    fun onUploadFinished(measurementId: Long)
 }
