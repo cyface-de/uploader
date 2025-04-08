@@ -92,4 +92,9 @@ interface Uploader {
      */
     @Throws(MalformedURLException::class)
     fun attachmentsEndpoint(uploadable: Uploadable): URL
+
+    /**
+     * Is called when all files have been uploaded and the measurement marked as synced.
+     */
+    fun onUploadFinished()
 }
