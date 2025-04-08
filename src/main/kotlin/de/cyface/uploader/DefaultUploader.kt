@@ -70,6 +70,7 @@ import javax.net.ssl.SSLException
  * @author Armin Schnabel
  * @property apiEndpoint An API endpoint running a Cyface data collector service, like `https://some.url/api/v3`
  */
+@SuppressWarnings("TooManyFunctions")
 class DefaultUploader(private val apiEndpoint: String) : Uploader {
 
     @Suppress("unused", "CyclomaticComplexMethod", "LongMethod") // Part of the API
@@ -102,6 +103,10 @@ class DefaultUploader(private val apiEndpoint: String) : Uploader {
         val measurementId = uploadable.measurementId()
         val deviceId = uploadable.deviceId()
         return URL(returnUrlWithTrailingSlash(apiEndpoint) + "measurements/$deviceId/$measurementId/attachments")
+    }
+
+    override fun onUploadFinished() {
+        // Nothing to do (only required by WebdavUploader)
     }
 
     @Throws(UploadFailed::class)
