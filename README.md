@@ -79,7 +79,7 @@ To use it as a dependency in your app you need to:
 
 - [Collector Compatibility](#collector-compatibility)
 
-- [Authenticator](#authenticator)
+- [Authentication](#authentication)
 
 - [Uploader](#uploader)
 
@@ -87,62 +87,40 @@ To use it as a dependency in your app you need to:
 
 This library is compatible with the [Cyface Collector Version 6](https://github.com/cyface-de/data-collector/releases/tag/6.0.0).
 
-### Authenticator
+### Authentication
 
-The Authenticator allows to request an auth token from the Cyface Auth API (currently part of the Cyface Collector).
-
-You need such an auth token to upload data to the Collector API.
-
-In case you use a custom authentication just skip this section and continue with the next section ("Uploader").
-
-```kotlin
-val apiEndpoint = "https://example.cyface.de/api/v3"
-val authenticator = DefaultAuthenticator(apiEndpoint)
-
-// Request a new token just before each upload attempt
-val token = authenticator.authenticate(username, password)
-```
+The uploader needs a JWT access token of the OAuth provider of the Collector (Keycloak). The library does not request the token; get it before each upload, for example with the OAuth client of your app.
 
 ### Uploader
 
 ```kotlin
-val apiEndpoint = "https://example.cyface.de/api/v3"
-val uploader = DefaultUploader(apiEndpoint)
-val processListener = object : UploadProgressListener {
+val uploader = DefaultUploader("https://example.cyface.de/api/v4")
+val progressListener = object : UploadProgressListener {
     override fun updatedProgress(percent: Float) {}
 }
 
-// Example token and metadata
-val token = "eyXyz123***"
-val deviceId = "1e1abeb0-469b-4d5d-b4c4-9bd3ebdcfd07"
-val measurementId = "1"
-val osVersion = "Android 13"
-val deviceType = "Pixel 6"
-val appVersion = "3.2.0"
-val length = 985.7357616144405
-val locationCount = 232
-val startLocation = GeoLocation(1637744753012L, 51.1, 13.1)
-val endLocation = GeoLocation(1637744993000, 51.2, 13.2)
-val modality = "BICYCLE"
-val formatVersion = RequestMetaData.CURRENT_TRANSFER_FILE_FORMAT_VERSION
-val logCount = 0
-val imageCount = 0
-val videoCount = 0
-val filesSize = 0L
-val metaData = RequestMetaData(
-    deviceId, measurementId,
-    osVersion, deviceType, appVersion, length,
-    locationCount, startLocation, endLocation,
-    modality, formatVersion,
-    logCount, imageCount, videoCount, filesSize
+val measurement = Measurement(
+    MeasurementIdentifier(UUID.fromString("1e1abeb0-469b-4d5d-b4c4-9bd3ebdcfd07"), 1L),
+    DeviceMetaData("Android 13", "Pixel 6"),
+    ApplicationMetaData("3.2.0", ApplicationMetaData.CURRENT_TRANSFER_FILE_FORMAT_VERSION),
+    MeasurementMetaData(
+        length = 985.7357616144405,
+        locationCount = 232,
+        startLocation = GeoLocation(1637744753012L, 51.1, 13.1),
+        endLocation = GeoLocation(1637744993000L, 51.2, 13.2),
+        modality = "BICYCLE",
+    ),
+    AttachmentMetaData(logCount = 0, imageCount = 0, videoCount = 0, filesSize = 0L),
 )
 
-// Replace with a Cyface Binary or another file when using a custom Collector
-val binary: File = null
+// The Cyface Binary of the measurement
+val binary = File("/path/to/measurement.cyf")
 
-// Upload the file
-val result = uploader.upload(token, metaData, binary, processListener)
+// Upload the measurement. Attachments are uploaded with `uploadAttachment()`.
+val result = uploader.uploadMeasurement(token, measurement, binary, progressListener)
 ```
+
+The uploader sends the measurement to `<apiEndpoint>/measurements` and an attachment to `<apiEndpoint>/measurements/<deviceId>/<measurementId>/attachments`.
 
 The result is
 
@@ -168,27 +146,54 @@ In case of an error, an `UploadFailed` exception will be thrown.
 - `MeasurementTooLarge` - When the transfer file is too large to be uploaded. (NOTE: The max size is currently static and set to 100 MB which should be about 44 hours of 100 Hz measurement)
 - `UnexpectedResponseCode` - When the server returns an unexpected response code (none of the mentioned above)
 - `AccountNotActivated` - When the user account is not activated (`428`)
+- `UploadSessionExpired` - When the upload session on the server expired. Start the upload again.
+
+Before the upload, the model classes throw `InvalidMetaData`, `TooFewLocations`, `DeprecatedFormatVersion` or `UnknownFormatVersion` when the metadata is not valid.
 
 
 ## Developer Guide
 
 This section is only relevant for developers of this library.
 
-The library uses [Gradle](https://gradle.org/) as the build system
+The library uses [Gradle](https://gradle.org/) as the build system (Gradle 8.13, Kotlin 2.1.20, JVM target Java 11).
+
+Copy `gradle.properties.template` to `gradle.properties` and add your GitHub credentials.
+
+```bash
+./gradlew clean build                                            # build and run the tests
+./gradlew test --tests "de.cyface.uploader.DefaultUploaderTest"  # one test class
+./gradlew detekt                                                 # static analysis
+```
+
+Architecture (package `de.cyface.uploader`):
+
+- `Uploader` -- the interface: `uploadMeasurement()`, `uploadAttachment()`, the endpoint URLs and `onUploadFinished()`.
+- `DefaultUploader` -- the implementation. It uses the resumable upload of the Google API Client (`MediaHttpUploader`): the metadata goes as JSON in the pre-request, the file follows in one chunk.
+- `model/` -- `Measurement` and `Attachment` (the `Uploadable` types) and the metadata value objects in `model/metadata/`.
+- `exception/` -- `UploadFailed` wraps all upload errors; the other exceptions map to HTTP status codes and network errors.
+
+Constraints:
+
+- The file is uploaded in one chunk of 100 MB at most, because the server cannot join more than one chunk.
+- Detekt allows no issues (`maxIssues: 0`), the line length is 120 characters at most (`config/detekt.yml`).
+- Tests use JUnit 5, Hamkrest and Mockito Kotlin.
+
+### GitHub Workflows
+
+- `gradle_build.yml` builds and tests each push and pull request to `main` and `release-*`. Pull requests from forks are skipped.
+- `gradle_publish.yml` runs on version tags: it publishes the library to GitHub Packages and creates the GitHub release.
+
+Rules of the workflows (hardening of CY-6748): do not use `${{ github.ref_name }}` or other event values directly in a `run:` script, pass them through `env:`; pass secrets through `env:` of the step that needs them; use `runs-on: ubuntu-26.04`, not `ubuntu-latest`.
+
+The organization-wide cleanup in `cyface-de/production` (`.github/workflows/registry_cleanup.yml`) deletes old package versions. A version that a build file of the organization names stays.
 
 ### Release a new Version
 
-See [Cyface Collector
-Readme](https://github.com/cyface-de/data-collector#release-a-new-version)
-
-- `version` in root `build.gradle.kts` is automatically set by the CI
-- Just tag the release and push the tag to Github
-- The Github package is automatically published when a new version is
-  tagged and pushed by our [Github
-  Actions](https://github.com/cyface-de/uploader/actions) to the [Github
-  Registry](https://github.com/cyface-de/uploader/packages)
-- The tag is automatically marked as a *new Release* on
-  [Github](https://github.com/cyface-de/uploader/releases)
+- The CI sets the `version` in the root `build.gradle.kts` from the tag. Do not change it manually.
+- Create an annotated tag with a semantic version (for example `1.6.3`) on `main` and push it. The body of the tag message becomes the release notes.
+- The workflow publishes the library to the [Github
+  Registry](https://github.com/cyface-de/uploader/packages) and creates the [GitHub release](https://github.com/cyface-de/uploader/releases).
+- A tag with a suffix (for example `1.6.3-beta1`) becomes a pre-release.
 
 
 ### Publishing artifacts to GitHub Packages manually
@@ -196,9 +201,8 @@ Readme](https://github.com/cyface-de/data-collector#release-a-new-version)
 The artifacts produced by this project are distributed via
 [GitHubPackages](https://github.com/features/packages). Before you can
 publish artifacts you need to rename `gradle.properties.template` to
-`gradle.properties` and enter your GitHub credentials. How to obtain
-these credentials is described
-[here](https://help.github.com/en/github/managing-packages-with-github-packages/about-github-packages#about-tokens).
+`gradle.properties` and enter your GitHub credentials. Use a personal access token (classic) with the scope `write:packages`, as described
+[here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#authenticating-to-github-packages).
 
 To publish a new version of an artifact you need to:
 
@@ -215,7 +219,7 @@ versioning](https://semver.org/).
 
 ## License
 
-Copyright 2023 Cyface GmbH
+Copyright 2023-2026 Cyface GmbH
 
 This file is part of the Cyface Uploader.
 
