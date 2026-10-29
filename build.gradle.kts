@@ -17,6 +17,7 @@
  *  along with the Cyface Uploader.  If not, see <http://www.gnu.org/licenses/>.
  */
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import java.net.URL
@@ -69,8 +70,13 @@ extra["dokkaVersion"] = "1.9.20"
 extra["detektVersion"] = "1.23.8"
 
 kotlin {
+  // Consumers with an older Kotlin compiler (android-backend: 2.0.21, tools: 2.1.20) can read
+  // the Kotlin metadata of at most one version newer. Thus, the library is compiled for Kotlin 2.1.
+  coreLibrariesVersion = "2.1.20"
   compilerOptions {
     jvmTarget.set(JvmTarget.JVM_11)
+    apiVersion.set(KotlinVersion.KOTLIN_2_1)
+    languageVersion.set(KotlinVersion.KOTLIN_2_1)
   }
 }
 
