@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with the Cyface Uploader.  If not, see <http://www.gnu.org/licenses/>.
  */
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import java.net.URL
@@ -33,22 +33,22 @@ buildscript {
   dependencies {
     // This is required to configure the dokka base plugin to include images.
     // classpath("<plugin coordinates>:<plugin version>")
-    classpath("org.jetbrains.dokka:dokka-base:1.7.10")
+    classpath("org.jetbrains.dokka:dokka-base:1.9.20")
   }
 }
 
 plugins {
   id("eclipse")
   id("idea")
-  id("org.barfuin.gradle.taskinfo").version("2.1.0")
+  id("org.barfuin.gradle.taskinfo").version("2.2.1")
 
   id("maven-publish")
-  kotlin("jvm").version("2.1.20")
+  kotlin("jvm").version("2.4.21")
 
   // For static code checks
-  id("io.gitlab.arturbosch.detekt").version("1.22.0")
+  id("io.gitlab.arturbosch.detekt").version("1.23.8")
   // For Generation of Documentation
-  id("org.jetbrains.dokka").version("1.8.10")
+  id("org.jetbrains.dokka").version("1.9.20")
 
 }
 
@@ -56,21 +56,21 @@ group = "de.cyface"
 version = "0.0.0" // Automatically overwritten by CI
 
 // Versions of dependencies
-extra["slf4jVersion"] = "2.0.7"
-extra["googleApiClientVersion"] = "2.2.0" // transmission protocol
-extra["gradleWrapperVersion"] = "7.6.1"
+extra["slf4jVersion"] = "2.0.20"
+extra["googleApiClientVersion"] = "2.9.2" // transmission protocol
+extra["gradleWrapperVersion"] = "8.14.6"
 
 // Versions of testing dependencies
-extra["junitVersion"] = "5.9.2"
+extra["junitVersion"] = "5.14.4"
 //extra["mockitoVersion"] = "5.2.0"
 extra["hamKrestVersion"] = "1.8.0.1"
 extra["mockitoKotlinVersion"] = "4.1.0"
-extra["dokkaVersion"] = "1.8.10"
-extra["detektVersion"] = "1.22.0"
+extra["dokkaVersion"] = "1.9.20"
+extra["detektVersion"] = "1.23.8"
 
-tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = "11"
+kotlin {
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_11)
   }
 }
 
@@ -106,6 +106,8 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom:${project.extra["junitVersion"]}"))
   testImplementation("org.junit.jupiter:junit-jupiter-params")  // Required for parameterized tests
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  // Explicit declaration required, so that the launcher version matches the JUnit version
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation("org.junit.jupiter:junit-jupiter:${project.extra["junitVersion"]}")
   @Suppress("SpellCheckingInspection")
   testImplementation("com.natpryce:hamkrest:${project.extra["hamKrestVersion"]}")

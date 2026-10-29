@@ -36,7 +36,6 @@ class RequestInitializeHandler(
     private val jwtBearer: String
 ) : HttpRequestInitializer {
     @Throws(IOException::class)
-
     override fun initialize(request: HttpRequest) {
         val headers = HttpHeaders()
         headers.authorization = jwtBearer
